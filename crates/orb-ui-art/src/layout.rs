@@ -8,9 +8,9 @@ use std::collections::HashMap;
 
 use crate::parts::{
     CLEAR_Y_303, EDIT_303, FLAGS_303, KEY_ROWS_303, KNOB_SWEEP, KNOB_W_303, KNOB_Y_303, KNOBS,
-    KNOBS_909, LEFT_X_303, LOGO_X, LOGO_Y, MOD_VIEW_808, generate_x_303, knob_x_303,
-    PITCH_LED_Y_303, PITCH_Y_303, STEPS_Y_909, TUNE_Y_303, WAVE_X_303, WAVE_Y_303, WHITE_303,
-    column_909, knob_y_909,
+    KNOBS_909, LEFT_X_303, LFO_MODE_W, LOGO_X, LOGO_Y, MOD_VIEW_808, generate_x_303, knob_x_303,
+    lfo_knobs_303, PITCH_LED_Y_303, PITCH_Y_303, STEPS_Y_909, TUNE_Y_303, WAVE_X_303, WAVE_Y_303,
+    WHITE_303, column_909, knob_y_909,
 };
 use crate::svg::{Part, Svg, arc_path, n, pal};
 
@@ -97,10 +97,16 @@ impl Builder<'_> {
     }
 
     fn knob(&mut self, id: &str, design: usize, x: f32, y: f32, v: f32) {
+        self.knob_of("knob", id, design, x, y, v);
+    }
+
+    /// A knob of kind `kind`: "knob" for the engine's controls, "lfoknob" for this fork's LFO
+    /// knobs (drawn and turned the same, but no engine control of their own).
+    fn knob_of(&mut self, kind: &'static str, id: &str, design: usize, x: f32, y: f32, v: f32) {
         let name = KNOBS[design].name;
         self.push(
             id,
-            "knob",
+            kind,
             name,
             x,
             y,
@@ -274,6 +280,20 @@ fn tb303(b: &mut Builder, r: usize) {
     {
         b.knob(name, KNOB_303, knob_x_303(k), KNOB_Y_303, vals[k]);
     }
+    // CUTOFF's LFO (this fork): the rate knob up left of it, under its label, the amount knob
+    // down right of it (the 909's small knob), and the mode buttons (S, sine, sample & hold)
+    // under it.
+    let (cx0, half) = (knob_x_303(0), KNOBS[KNOB_909].w / 2.0);
+    let ((rx, ry), (ax, ay)) = lfo_knobs_303();
+    b.knob_of("lfoknob", "cutoff_lfo", KNOB_909, rx - half, ry - half, 0.5);
+    b.knob_of("lfoknob", "cutoff_amt", KNOB_909, ax - half, ay - half, 0.0);
+    b.part(
+        "cutoff_lfo_mode",
+        "lfomode",
+        "lfo_mode_00",
+        cx0 + KNOB_W_303 / 2.0 - LFO_MODE_W / 2.0,
+        KNOB_Y_303 + KNOB_W_303 + 2.0,
+    );
     // GENERATE: a pill in the slot after the knobs, level with the knobs' centers.
     b.part(
         "generate",

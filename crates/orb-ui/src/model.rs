@@ -493,6 +493,12 @@ impl Panel {
         self.knobs.get(id).copied().unwrap_or(0)
     }
 
+    /// Sets a knob position and sends nothing (the fork's LFO knobs, restored from an .rbsx;
+    /// lfo.rs).
+    pub fn put_knob(&mut self, id: &str, p: i32) {
+        self.knobs.insert(id.into(), p.clamp(0, KNOB_MAX));
+    }
+
     /// Sets a knob position and sends the value when it changed.
     pub fn set_knob(&mut self, id: &str, p: i32) {
         let p = p.clamp(0, KNOB_MAX);
@@ -1441,7 +1447,11 @@ mod tests {
         let mut p = Panel::demo();
         for pressed in [false, true] {
             for c in crate::layout::controls() {
-                if matches!(c.kind.as_str(), "knob" | "fader" | "display" | "area") {
+                // (the fork's LFO knobs are drawn as knobs, from layers)
+                if matches!(
+                    c.kind.as_str(),
+                    "knob" | "lfoknob" | "fader" | "display" | "area"
+                ) {
                     continue;
                 }
                 let n = p.part_name(&c, pressed, 0.0);

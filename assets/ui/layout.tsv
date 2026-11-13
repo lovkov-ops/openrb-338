@@ -94,6 +94,9 @@ tb303_1.reso	tb303_1	knob	knob_303	214.49	60	27	27
 tb303_1.envmod	tb303_1	knob	knob_303	267.23	60	27	27
 tb303_1.decay	tb303_1	knob	knob_303	319.98	60	27	27
 tb303_1.accent	tb303_1	knob	knob_303	372.72	60	27	27
+tb303_1.cutoff_lfo	tb303_1	lfoknob	knob_909	151.74	59.5	12	12
+tb303_1.cutoff_amt	tb303_1	lfoknob	knob_909	186.74	75.5	12	12
+tb303_1.cutoff_lfo_mode	tb303_1	lfomode	lfo_mode_00	160.24	89	30	11
 tb303_1.generate	tb303_1	trigger	btn_pill_22x10_rest	427.73	68.5	22	10
 tb303_1.edit_step	tb303_1	display	seg_0..9,seg_blank	386	109	19	16
 tb303_1.step	tb303_1	trigger	arrow303_inc_rest	406	108	11	9
@@ -144,6 +147,9 @@ tb303_2.reso	tb303_2	knob	knob_303	214.49	175	27	27
 tb303_2.envmod	tb303_2	knob	knob_303	267.23	175	27	27
 tb303_2.decay	tb303_2	knob	knob_303	319.98	175	27	27
 tb303_2.accent	tb303_2	knob	knob_303	372.72	175	27	27
+tb303_2.cutoff_lfo	tb303_2	lfoknob	knob_909	151.74	174.5	12	12
+tb303_2.cutoff_amt	tb303_2	lfoknob	knob_909	186.74	190.5	12	12
+tb303_2.cutoff_lfo_mode	tb303_2	lfomode	lfo_mode_00	160.24	204	30	11
 tb303_2.generate	tb303_2	trigger	btn_pill_22x10_rest	427.73	183.5	22	10
 tb303_2.edit_step	tb303_2	display	seg_0..9,seg_blank	386	224	19	16
 tb303_2.step	tb303_2	trigger	arrow303_inc_rest	406	223	11	9

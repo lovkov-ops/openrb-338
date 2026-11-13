@@ -189,6 +189,11 @@ pub struct App {
     pub(crate) op_sel: [[[bool; 5]; 2]; 3],
     pub(crate) op_picking: Option<(usize, generate::Op)>,
     pub(crate) op_done: [[bool; 2]; 3],
+    /// The LFO of each bass synth's CUTOFF (`lfo.rs`): its mode buttons, its running state,
+    /// and the egui time of its last step.
+    pub(crate) lfo_mode: [crate::lfo::Mode; 2],
+    pub(crate) lfo_run: [crate::lfo::Runner; 2],
+    pub(crate) lfo_time: Option<f64>,
     pub(crate) rng: crate::random::Rng,
     /// Whether the logo plays its startup animation (task-114): the panel once, from the first
     /// frame it is drawn, and the About window at each open. Off by default, so the headless
@@ -223,7 +228,7 @@ pub struct App {
 
 impl App {
     pub fn new(panel: Panel, shot: Option<Shot>) -> Self {
-        Self {
+        let mut app = Self {
             panel,
             link: None,
             samples: None,
@@ -260,6 +265,9 @@ impl App {
             op_sel: [[[false; 5]; 2]; 3],
             op_picking: None,
             op_done: [[false; 2]; 3],
+            lfo_mode: [crate::lfo::Mode::default(); 2],
+            lfo_run: [crate::lfo::Runner::new(11), crate::lfo::Runner::new(23)],
+            lfo_time: None,
             rng: crate::random::Rng::from_time(),
             logo_anim: false,
             logo_start: None,
@@ -279,7 +287,10 @@ impl App {
             ctls: layout::controls(),
             shot,
             frame_stats: FrameStats::from_env(),
-        }
+        };
+        // the LFO knobs start at their defaults (lfo.rs)
+        app.lfo_reset_knobs();
+        app
     }
 
     /// Opens the file browser for `mode` over the panel (the menu calls this). Ctrl/Cmd+O opens it
@@ -707,6 +718,8 @@ impl App {
                 ui.ctx().request_repaint_after(METER_FRAME);
             }
         }
+        // the LFOs move their knobs' values in the engine, after the panel took the engine's
+        self.lfo_step(ui.ctx(), now);
         // the 303's lit note in pitch mode goes out by itself
         if let Some(t) = self.panel.next_change(now) {
             ui.ctx()
@@ -852,7 +865,16 @@ impl App {
                 paint_part(ui, &c.part, rect);
                 self.mod_view(ui, view, c);
             }
-            "knob" => self.knob(ui, view, c, rect),
+            "knob" => {
+                // a move of a knob the LFO runs on is the user's new value for it (lfo.rs)
+                let before = self.panel.knob(&c.id);
+                self.knob(ui, view, c, rect);
+                if self.panel.knob(&c.id) != before {
+                    self.lfo_knob_moved(&c.id);
+                }
+            }
+            "lfoknob" => self.knob(ui, view, c, rect),
+            "lfomode" => self.lfo_mode_control(ui, c, rect),
             "fader" => self.fader(ui, view, c, rect),
             "display" => {
                 let n = (c.w / 9.0) as usize;
@@ -1018,7 +1040,11 @@ impl App {
         // A double click sets the knob to its value in a new empty song (docs/ui_spec.md
         // section 2); the demo panel has no link and no such song.
         if r.double_clicked()
-            && let Some(v) = self.link.as_ref().and_then(|l| l.knob_default(&c.id))
+            && let Some(v) = self
+                .link
+                .as_ref()
+                .and_then(|l| l.knob_default(&c.id))
+                .or_else(|| crate::lfo::knob_default(&c.id))
         {
             self.panel
                 .set_knob(&c.id, behavior::knob_from_engine(v as i32));
@@ -1030,7 +1056,9 @@ impl App {
         if k.ring_r > 0.0 {
             let bipolar = c.name() == "pan";
             let a0 = if bipolar { 0.0 } else { -135.0 };
-            paint_arc(ui, view, c, k, a0, behavior::knob_angle(p));
+            // while the LFO moves the value, the arc shows where it is now (lfo.rs)
+            let arc = self.lfo_arc(&c.id).unwrap_or(p);
+            paint_arc(ui, view, c, k, a0, behavior::knob_angle(arc));
         }
         let angle = behavior::knob_angle(p).to_radians();
         let pivot = Vec2::new(k.cx / k.w, k.cy / k.h);

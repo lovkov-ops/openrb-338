@@ -596,8 +596,6 @@ impl App {
     /// ([`App::new_now`]) both come here. Without a player there is nothing to load: the
     /// panel and the document are made new.
     fn fresh(&mut self) {
-        // a new song starts with an empty GENERATE menu (rbsx.rs)
-        self.set_gen_state(Default::default());
         if self.link.is_none() {
             self.panel = crate::model::Panel::new();
             self.settle(
@@ -607,6 +605,8 @@ impl App {
                 STANDARD.into(),
                 Kit::Standard,
             );
+            // a new song starts with an empty GENERATE menu and LFOs (rbsx.rs)
+            self.set_gen_state(Default::default());
             return;
         }
         let samples = self.samples.clone();
@@ -620,6 +620,7 @@ impl App {
             STANDARD.into(),
             Kit::Standard,
         );
+        self.set_gen_state(Default::default());
     }
 
     /// File > New: with unsaved changes first asks what to do with them.

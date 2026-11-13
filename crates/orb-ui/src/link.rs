@@ -893,6 +893,21 @@ impl Link {
         }
     }
 
+    /// Sends the control `id` the value `value` (0..=127) the way the panel's change of it
+    /// would, but without the panel: the fork's LFO moves a knob's value in the engine while
+    /// the panel keeps the user's (lfo.rs). With record on the engine records it as any change.
+    pub fn send_value(&mut self, id: &str, value: u8) {
+        for m in self.set_messages(id, value as i32) {
+            if let Some(c) = Self::command(&m) {
+                self.backlog.push_back(c);
+            }
+            if let Some(log) = &mut self.log {
+                log.push(m);
+            }
+        }
+        self.flush();
+    }
+
     /// Sends the panel's pending events to the player.
     pub fn forward(&mut self, panel: &mut Panel) {
         let events = std::mem::take(&mut panel.events);
