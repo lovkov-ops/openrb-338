@@ -80,7 +80,8 @@ Place each at its section origin (panel pixels).
 Control positions in `layout.tsv` are already absolute. The drum legend rows are in the
 backgrounds (808: 12 cells of 22 px at (10, 71); 909: the 12 instrument chips of the top row at
 (4, 4) with the edges of `EDGES_909` in `parts.rs`, and the name row at (26, 74)). The 303's key
-band (`BAND_303`) is three blocks of one height (y 46..112): pitch mode and clear (black), the
+band (`BAND_303`) is three blocks of one height (y 56..112; this fork lowered the top from 46
+to make room under the knobs, rows in `KEY_ROWS_303`): pitch mode and clear (black), the
 keys (gray), and the flags with the edit step display in their top row (black). The six knobs
 start at `KNOB_X0_303` (68.5), `KNOB_DX_303` (43.5) apart, followed by the GENERATE pill
 (22 x 10, centered at `GENERATE_X_303`, y 22), all spread evenly between the waveform switch and
@@ -161,8 +162,8 @@ are in `KNOBS` (`src/parts.rs`) and below:
 | `bank_btn_A_` .. `bank_btn_D_` | 14 x 15 | `off`, `on` | bank row, 4 keycaps at (4 + 16 i, 64) |
 | `arrow303_inc_`, `arrow303_dec_` | 11 x 9 | `rest`, `pressed` | 303 Step (up) and Back (down) |
 | `btn_pill_22x10_` | 22 x 10 | `rest`, `pressed` | 303 Pitch mode, Clear |
-| `key_white_`, `key_black_` | 9 x 16, 8 x 15 | `rest`, `pressed` | 303 note keys (white at y 89, black at y 60) |
-| `btn_flag_` | 9 x 16 | `rest`, `pressed` | 303 Down, Up, Accent, Slide, Note/Rest |
+| `key_white_`, `key_black_` | 9 x 13, 8 x 12 | `rest`, `pressed` | 303 note keys (white at y 93, black at y 68) |
+| `btn_flag_` | 9 x 13 | `rest`, `pressed` | 303 Down, Up, Accent, Slide, Note/Rest |
 
 ### LEDs and steps
 

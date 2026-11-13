@@ -611,23 +611,25 @@ fn small_buttons(out: &mut Vec<Part>) {
                 },
             ));
         }
-        out.push(Part::new(format!("key_white_{state}"), 9.0, 16.0, |s| {
-            key_3d(s, 0.5, 0.0, 8.0, 16.0, 1.5, "#c4c7cb", pal::WHITE);
+        let (wh, bh) = (WHITE_KEY_H_303, BLACK_KEY_H_303);
+        out.push(Part::new(format!("key_white_{state}"), 9.0, wh, |s| {
+            key_3d(s, 0.5, 0.0, 8.0, wh, 1.5, "#c4c7cb", pal::WHITE);
             if state == "pressed" {
-                s.rect(0.5, 0.0, 8.0, 16.0, 1.5, "#80808066");
+                s.rect(0.5, 0.0, 8.0, wh, 1.5, "#80808066");
             }
         }));
-        out.push(Part::new(format!("key_black_{state}"), 8.0, 15.0, |s| {
-            s.rect(0.0, 0.0, 8.0, 15.0, 1.5, "#0e0f10");
-            s.rect(1.0, 0.0, 6.0, 12.5, 1.0, "#26282b");
+        out.push(Part::new(format!("key_black_{state}"), 8.0, bh, |s| {
+            s.rect(0.0, 0.0, 8.0, bh, 1.5, "#0e0f10");
+            // the lighter top of the key: 2.5 px short of its bottom, as before
+            s.rect(1.0, 0.0, 6.0, bh - 2.5, 1.0, "#26282b");
             if state == "pressed" {
-                s.rect(0.0, 0.0, 8.0, 15.0, 1.5, "#ffffff30");
+                s.rect(0.0, 0.0, 8.0, bh, 1.5, "#ffffff30");
             }
         }));
-        out.push(Part::new(format!("btn_flag_{state}"), 9.0, 16.0, |s| {
-            key_3d(s, 0.5, 0.0, 8.0, 16.0, 1.8, "#a4aab2", pal::STEEL);
+        out.push(Part::new(format!("btn_flag_{state}"), 9.0, wh, |s| {
+            key_3d(s, 0.5, 0.0, 8.0, wh, 1.8, "#a4aab2", pal::STEEL);
             if state == "pressed" {
-                s.rect(0.5, 0.0, 8.0, 16.0, 1.8, "#00000050");
+                s.rect(0.5, 0.0, 8.0, wh, 1.8, "#00000050");
             }
         }));
     }
@@ -992,19 +994,34 @@ fn pattern_bg(out: &mut Vec<Part>) {
 }
 
 /// The 303's key band: three blocks of one height 6 px apart, (x, y, w, h): pitch mode and
-/// clear, the keys, and the step flags with the edit step display. All span y 46..112.
+/// clear, the keys, and the step flags with the edit step display. All span y 56..112: this
+/// fork lowered their top from 46, leaving a strip under the knobs for more buttons.
 pub const BAND_303: [(f32, f32, f32, f32); 3] = [
-    (12.0, 46.0, 34.0, 66.0),
-    (52.0, 46.0, 184.0, 66.0),
-    (242.0, 46.0, 112.0, 66.0),
+    (12.0, 56.0, 34.0, 56.0),
+    (52.0, 56.0, 184.0, 56.0),
+    (242.0, 56.0, 112.0, 56.0),
 ];
+/// The rows of the key band (tops): the black keys' LEDs, the black keys, the white keys' (and
+/// flags') LEDs, the white keys and the flags.
+pub const KEY_ROWS_303: [f32; 4] = [58.0, 68.0, 83.0, 93.0];
+/// The heights of the 303's white keys (and flags) and black keys (16 and 15 before the band
+/// was lowered).
+pub const WHITE_KEY_H_303: f32 = 13.0;
+pub const BLACK_KEY_H_303: f32 = 12.0;
+/// The tops of the pitch mode LED, the pitch mode pill and the clear pill, and the centers of
+/// the PITCH and CLEAR labels.
+pub const PITCH_LED_Y_303: f32 = 65.0;
+pub const PITCH_Y_303: f32 = 75.0;
+pub const CLEAR_Y_303: f32 = 96.0;
+const PITCH_LABEL_Y_303: f32 = 61.0;
+const CLEAR_LABEL_Y_303: f32 = 91.5;
 /// The left edges of the 303's white keys and its flags (DOWN, UP, ACCENT, SLIDE, NOTE),
 /// the flags 22 px apart.
 pub const WHITE_303: [f32; 8] = [66.0, 87.0, 108.0, 129.0, 150.0, 171.0, 192.0, 213.0];
 pub const FLAGS_303: [f32; 5] = [250.5, 272.5, 294.5, 316.5, 338.5];
 /// The edit step display's left and top, in the flags block's top row (the display and its
 /// arrows are 31 px wide).
-pub const EDIT_303: (f32, f32) = (296.0, 50.0);
+pub const EDIT_303: (f32, f32) = (296.0, 59.0);
 /// The six knobs (30 wide) and the GENERATE pill (22 wide) are spread evenly between the
 /// waveform switch's right edge (55) and the section's right edge (366): one gap of about
 /// 13.5 px before, between and after them.
@@ -1043,8 +1060,8 @@ fn tb303_bg(out: &mut Vec<Part>) {
         label(s, 279.5, ey + 8.0, 3.2, pal::INK, "EDIT STEP");
         well(s, ex, ey, 19.0, 16.0);
         let ink = pal::INK;
-        label(s, LEFT_X_303, 51.5, 3.2, ink, "PITCH");
-        label(s, LEFT_X_303, 88.5, 3.2, ink, "CLEAR");
+        label(s, LEFT_X_303, PITCH_LABEL_Y_303, 3.2, ink, "PITCH");
+        label(s, LEFT_X_303, CLEAR_LABEL_Y_303, 3.2, ink, "CLEAR");
         for (x, name) in FLAGS_303
             .into_iter()
             .zip(["DOWN", "UP", "ACCENT", "SLIDE", "NOTE"])
