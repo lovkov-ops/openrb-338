@@ -1016,21 +1016,17 @@ pub const GENERATE_X_303: f32 = KNOB_X0_303 + 5.0 * KNOB_DX_303 + 30.0 + 14.0 + 
 /// The center x of the pitch mode and clear block.
 pub const LEFT_X_303: f32 = 29.0;
 
-fn tb303_bg(out: &mut Vec<Part>) {
-    // One background per bass synth: the title above the waveform switch names it.
-    for (name, title) in [("bg_tb303_1", "BAZE 1"), ("bg_tb303_2", "BAZE 2")] {
-        tb303_bg_one(out, name, title);
-    }
-}
+/// The vertical center of the WAVEFORM label: the middle of the paper above the waveform switch
+/// (the section's top at 0, the switch's at 20).
+pub const WAVEFORM_Y_303: f32 = 10.0;
 
-fn tb303_bg_one(out: &mut Vec<Part>, name: &'static str, title: &'static str) {
-    out.push(Part::new(name, 366.0, 115.0, |s| {
+fn tb303_bg(out: &mut Vec<Part>) {
+    out.push(Part::new("bg_tb303", 366.0, 115.0, |s| {
         face(s, 366.0, 115.0, pal::PAPER);
         let ink = pal::BLACK;
-        // The synth's title on top, then the waveform switch (40 x 14 at (15, 20)) labeled
-        // just above it.
-        label(s, 35.0, 5.5, 3.6, ink, title);
-        label(s, 35.0, 13.0, 3.6, ink, "WAVEFORM");
+        // The waveform switch (40 x 14 at (15, 20)) is labeled in the middle of the paper
+        // above it.
+        label(s, 35.0, WAVEFORM_Y_303, 3.6, ink, "WAVEFORM");
         for (k, name) in ["TUNE", "CUTOFF", "RESO", "ENV MOD", "DECAY", "ACCENT"]
             .into_iter()
             .enumerate()
