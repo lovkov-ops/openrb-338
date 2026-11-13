@@ -189,10 +189,11 @@ pub struct App {
     pub(crate) op_sel: [[[bool; 5]; 2]; 3],
     pub(crate) op_picking: Option<(usize, generate::Op)>,
     pub(crate) op_done: [[bool; 2]; 3],
-    /// The LFO of each bass synth's CUTOFF (`lfo.rs`): its mode buttons, its running state,
-    /// and the egui time of its last step.
-    pub(crate) lfo_mode: [crate::lfo::Mode; 2],
-    pub(crate) lfo_run: [crate::lfo::Runner; 2],
+    /// The LFOs of each bass synth's five large knobs (`lfo.rs`), indexed by synth then knob
+    /// (`lfo::PARAMS`): their mode buttons, their running state, and the egui time of the last
+    /// step.
+    pub(crate) lfo_mode: [[crate::lfo::Mode; 5]; 2],
+    pub(crate) lfo_run: [[crate::lfo::Runner; 5]; 2],
     pub(crate) lfo_time: Option<f64>,
     pub(crate) rng: crate::random::Rng,
     /// Whether the logo plays its startup animation (task-114): the panel once, from the first
@@ -265,8 +266,10 @@ impl App {
             op_sel: [[[false; 5]; 2]; 3],
             op_picking: None,
             op_done: [[false; 2]; 3],
-            lfo_mode: [crate::lfo::Mode::default(); 2],
-            lfo_run: [crate::lfo::Runner::new(11), crate::lfo::Runner::new(23)],
+            lfo_mode: [[crate::lfo::Mode::default(); 5]; 2],
+            lfo_run: std::array::from_fn(|k| {
+                std::array::from_fn(|p| crate::lfo::Runner::new(11 + 10 * k as u64 + p as u64))
+            }),
             lfo_time: None,
             rng: crate::random::Rng::from_time(),
             logo_anim: false,
@@ -879,9 +882,12 @@ impl App {
             "display" => {
                 let n = (c.w / 9.0) as usize;
                 let frames = behavior::digit_frames(self.panel.display(&c.id), n);
+                // the display's digit parts: `seg_*`, or the fork's lighter `segb_*`
+                let prefix = c.part.split('_').next().unwrap_or("seg");
                 for (i, f) in frames.into_iter().enumerate() {
                     let x = c.x + c.w - 9.0 * (n - i) as f32;
-                    paint_part(ui, f, view.rect(x, c.y, 9.0, 16.0));
+                    let name = f.replacen("seg", prefix, 1);
+                    paint_part(ui, &name, view.rect(x, c.y, 9.0, 16.0));
                 }
             }
             "led" | "meter" => {

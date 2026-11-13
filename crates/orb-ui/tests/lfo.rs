@@ -1,4 +1,4 @@
-//! The CUTOFF LFO of the bass synths (this fork's `lfo.rs`), headless with a real player: it
+//! The LFOs of the bass synths' large knobs (this fork's `lfo.rs`), headless with a real player: it
 //! moves the cutoff in the engine around the knob's value while the knob shows the user's
 //! value, the user's move of the knob is its new value, its buttons take clicks, and an .rbsx
 //! keeps its settings.
@@ -91,7 +91,13 @@ impl Harness {
 
     /// The cutoff values the link sent the engine since the log started (synth `k`).
     fn cutoffs_sent(&mut self, k: usize) -> Vec<u8> {
-        let (d, ctrl) = link::controls()[&format!("tb303_{}.cutoff", k + 1)];
+        self.sent(k, 0)
+    }
+
+    /// The values of synth `k`'s knob `param` (`lfo::PARAMS`) the link sent since the log
+    /// started.
+    fn sent(&mut self, k: usize, param: usize) -> Vec<u8> {
+        let (d, ctrl) = link::controls()[&lfo::ids(k, param)[0]];
         let log = self.app.link.as_mut().unwrap().log.take().unwrap_or_default();
         self.start_log();
         log.into_iter()
@@ -153,14 +159,14 @@ fn song() -> PathBuf {
 fn an_lfo_at_no_amount_sends_nothing_and_its_knobs_start_at_their_defaults() {
     let mut h = Harness::new();
     h.open(&song());
-    let [_, rate, amount, _] = lfo::ids(0);
+    let [_, rate, amount, _] = lfo::ids(0, 0);
     assert_eq!(h.app.panel.value(&rate), Some(lfo::RATE_DEFAULT));
     assert_eq!(h.app.panel.value(&amount), Some(lfo::AMOUNT_DEFAULT));
-    assert_eq!(h.app.lfo_mode(0), lfo::Mode::default());
+    assert_eq!(h.app.lfo_mode(0, 0), lfo::Mode::default());
     h.start_log();
     h.calls(40);
     assert!(h.cutoffs_sent(0).is_empty());
-    assert_eq!(h.app.lfo_base(0), None);
+    assert_eq!(h.app.lfo_base(0, 0), None);
     assert!(h.app.gen_state().is_empty());
 }
 
@@ -168,7 +174,7 @@ fn an_lfo_at_no_amount_sends_nothing_and_its_knobs_start_at_their_defaults() {
 fn the_lfo_moves_the_engines_cutoff_while_the_knob_keeps_the_users_value() {
     let mut h = Harness::new();
     h.open(&song());
-    let [cutoff, rate, amount, _] = lfo::ids(0);
+    let [cutoff, rate, amount, _] = lfo::ids(0, 0);
     let base = h.app.panel.value(&cutoff).unwrap();
     h.set(&rate, 127); // 20 Hz free: a cycle in 3 frames
     h.set(&amount, 32);
@@ -182,14 +188,14 @@ fn the_lfo_moves_the_engines_cutoff_while_the_knob_keeps_the_users_value() {
     assert!(base - lo <= 32 && hi - base <= 32, "{lo} {base} {hi}");
     // the knob and the saved song keep the user's value
     assert_eq!(h.app.panel.value(&cutoff), Some(base));
-    assert_eq!(h.app.lfo_base(0), Some(base));
+    assert_eq!(h.app.lfo_base(0, 0), Some(base));
     // the other synth's LFO does not run
     assert!(h.cutoffs_sent(1).is_empty());
 
     // the user's move of the knob is the new value to move around
     h.drag_up(&cutoff, 20.0);
     h.calls(2);
-    let moved = h.app.lfo_base(0).unwrap();
+    let moved = h.app.lfo_base(0, 0).unwrap();
     assert!(moved > base, "{moved} {base}");
     assert_eq!(h.app.panel.value(&cutoff), Some(moved));
 
@@ -197,7 +203,7 @@ fn the_lfo_moves_the_engines_cutoff_while_the_knob_keeps_the_users_value() {
     h.set(&amount, 0);
     h.calls(2);
     assert_eq!(h.cutoffs_sent(0).last(), Some(&moved));
-    assert_eq!(h.app.lfo_base(0), None);
+    assert_eq!(h.app.lfo_base(0, 0), None);
     h.calls(20);
     assert!(h.cutoffs_sent(0).is_empty());
 }
@@ -205,24 +211,24 @@ fn the_lfo_moves_the_engines_cutoff_while_the_knob_keeps_the_users_value() {
 #[test]
 fn the_mode_buttons_take_a_click_on_each_third() {
     let mut h = Harness::new();
-    let id = &lfo::ids(1)[3];
+    let id = &lfo::ids(1, 0)[3];
     let c = layout::controls().into_iter().find(|c| &c.id == id).unwrap();
     let at = |third: f32| Pos2::new(c.x + c.w * (third + 0.5) / 3.0, c.y + c.h / 2.0);
-    assert_eq!(h.app.lfo_mode(1), lfo::Mode::default());
+    assert_eq!(h.app.lfo_mode(1, 0), lfo::Mode::default());
     // S: tempo sync on, then off again
     h.click_at(at(0.0));
-    assert!(h.app.lfo_mode(1).sync);
+    assert!(h.app.lfo_mode(1, 0).sync);
     // sample & hold, then the sine: one of the two at a time
     h.click_at(at(2.0));
-    assert_eq!(h.app.lfo_mode(1).shape, Shape::SampleHold);
+    assert_eq!(h.app.lfo_mode(1, 0).shape, Shape::SampleHold);
     h.click_at(at(2.0));
-    assert_eq!(h.app.lfo_mode(1).shape, Shape::SampleHold);
+    assert_eq!(h.app.lfo_mode(1, 0).shape, Shape::SampleHold);
     h.click_at(at(1.0));
-    assert_eq!(h.app.lfo_mode(1).shape, Shape::Sine);
+    assert_eq!(h.app.lfo_mode(1, 0).shape, Shape::Sine);
     h.click_at(at(0.0));
-    assert!(!h.app.lfo_mode(1).sync);
+    assert!(!h.app.lfo_mode(1, 0).sync);
     // the upper synth's buttons were left alone; the clicks count as edits
-    assert_eq!(h.app.lfo_mode(0), lfo::Mode::default());
+    assert_eq!(h.app.lfo_mode(0, 0), lfo::Mode::default());
     assert!(h.app.doc.modified);
 }
 
@@ -231,11 +237,11 @@ fn an_rbsx_keeps_the_lfo_and_an_rbs_save_asks_first() {
     let dir = tempfile::tempdir().unwrap();
     let mut h = Harness::new();
     h.open(&song());
-    let [_, rate, amount, _] = lfo::ids(1);
+    let [_, rate, amount, _] = lfo::ids(1, 0);
     h.set(&rate, 90);
     h.set(&amount, 40);
-    h.app.press_lfo_mode(1, 0);
-    h.app.press_lfo_mode(1, 2);
+    h.app.press_lfo_mode(1, 0, 0);
+    h.app.press_lfo_mode(1, 0, 2);
     h.calls(3);
     let kept = h.app.gen_state();
     assert!(!kept.is_empty());
@@ -250,7 +256,7 @@ fn an_rbsx_keeps_the_lfo_and_an_rbs_save_asks_first() {
     assert_eq!(h2.app.panel.value(&rate), Some(90));
     assert_eq!(h2.app.panel.value(&amount), Some(40));
     assert_eq!(
-        h2.app.lfo_mode(1),
+        h2.app.lfo_mode(1, 0),
         lfo::Mode {
             sync: true,
             shape: Shape::SampleHold
@@ -262,8 +268,50 @@ fn an_rbsx_keeps_the_lfo_and_an_rbs_save_asks_first() {
     std::fs::copy(song(), &src).unwrap();
     let mut h3 = Harness::new();
     h3.open(&src);
-    h3.set(&lfo::ids(0)[2], 10);
+    h3.set(&lfo::ids(0, 0)[2], 10);
     h3.calls(1);
     h3.app.command(Cmd::Save);
     assert!(h3.app.format_prompting());
+}
+
+#[test]
+fn each_knobs_lfo_moves_only_its_own_knob() {
+    let mut h = Harness::new();
+    h.open(&song());
+    // the lower synth's DECAY: its own RATE, AMOUNT and buttons
+    let decay = lfo::PARAMS.iter().position(|p| *p == "decay").unwrap();
+    let [knob, rate, amount, mode] = lfo::ids(1, decay);
+    assert_eq!(knob, "tb303_2.decay");
+    let base = h.app.panel.value(&knob).unwrap();
+    h.set(&rate, 127);
+    h.set(&amount, 20);
+    // sample & hold, by a click on its third of DECAY's buttons
+    let c = layout::controls().into_iter().find(|c| c.id == mode).unwrap();
+    h.click_at(Pos2::new(c.x + c.w * 2.5 / 3.0, c.y + c.h / 2.0));
+    assert_eq!(h.app.lfo_mode(1, decay).shape, Shape::SampleHold);
+    assert_eq!(h.app.lfo_mode(1, 0).shape, Shape::Sine);
+    h.start_log();
+    h.calls(80);
+    let sent = h.sent(1, decay);
+    assert!(sent.len() > 10, "{sent:?}");
+    assert!(sent.iter().all(|v| v.abs_diff(base) <= 20), "{sent:?} around {base}");
+    assert_eq!(h.app.panel.value(&knob), Some(base));
+    // no other knob of either synth was moved
+    for k in 0..2 {
+        for p in 0..lfo::PARAMS.len() {
+            if (k, p) != (1, decay) {
+                assert!(h.sent(k, p).is_empty(), "{}", lfo::ids(k, p)[0]);
+                assert_eq!(h.app.lfo_base(k, p), None);
+            }
+        }
+    }
+    // every large knob of both synths has its LFO's controls on the panel
+    let ids: Vec<String> = layout::controls().into_iter().map(|c| c.id).collect();
+    for k in 0..2 {
+        for p in 0..lfo::PARAMS.len() {
+            for id in lfo::ids(k, p) {
+                assert!(ids.contains(&id), "{id}");
+            }
+        }
+    }
 }

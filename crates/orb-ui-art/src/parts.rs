@@ -345,39 +345,41 @@ fn mixsw_body(s: &mut Svg, label_: &str, on: bool) {
     text(s, 10.4, 6.2, 3.8, Anchor::Start, color, label_);
 }
 
-/// The LFO's mode buttons under a 303 knob (this fork): S (tempo sync), the sine and sample &
-/// hold side by side on one black frame, `LFO_MODE_W` x `LFO_MODE_H`. Parts `lfo_mode_<s><h>`:
-/// `s` 1 with sync on (S light blue with a glow, else a dull blue), `h` 1 for sample & hold (the
-/// chosen wave green with a glow, the other a dull red).
+/// The LFO's mode buttons under a 303 knob (this fork): Sync (tempo sync), the sine and sample
+/// & hold side by side in three equal cells on one black frame, `LFO_MODE_W` x `LFO_MODE_H`.
+/// Parts `lfo_mode_<s><h>`: `s` 1 with sync on (Sync green with a glow, else a dull blue), `h` 1
+/// for sample & hold (the chosen wave green with a glow, the other a dull red).
 fn lfo_modes(out: &mut Vec<Part>) {
     let (w, h) = (LFO_MODE_W, LFO_MODE_H);
     let cell = w / 3.0;
     let yc = h / 2.0;
+    // the waves, 6.4 wide, centered in their cells
+    let (sx, hx) = (cell + cell / 2.0 - 3.2, 2.0 * cell + cell / 2.0 - 3.4);
     let sine = format!(
         "M{} {yc} C{} {} {} {} {} {yc} S{} {} {} {yc}",
-        n(cell + 2.0),
-        n(cell + 3.2),
+        n(sx),
+        n(sx + 1.2),
         n(yc - 3.2),
-        n(cell + 4.0),
+        n(sx + 2.0),
         n(yc - 3.2),
-        n(cell + 5.0),
-        n(cell + 6.8),
+        n(sx + 3.0),
+        n(sx + 4.8),
         n(yc + 3.2),
-        n(cell + 8.0),
+        n(sx + 6.0),
     );
     let sh = format!(
         "M{} {} L{} {} L{} {} L{} {} L{} {} L{} {}",
-        n(2.0 * cell + 1.6),
+        n(hx),
         n(yc + 1.6),
-        n(2.0 * cell + 3.0),
+        n(hx + 1.4),
         n(yc - 2.6),
-        n(2.0 * cell + 4.4),
+        n(hx + 2.8),
         n(yc + 0.8),
-        n(2.0 * cell + 5.8),
+        n(hx + 4.2),
         n(yc - 3.0),
-        n(2.0 * cell + 7.2),
+        n(hx + 5.6),
         n(yc + 2.8),
-        n(2.0 * cell + 8.4),
+        n(hx + 6.8),
         n(yc - 0.6),
     );
     for sync in [false, true] {
@@ -390,12 +392,12 @@ fn lfo_modes(out: &mut Vec<Part>) {
                     let x = cell * i as f32;
                     s.line(x, 2.5, x, h - 2.5, "#0e0f10", 1.0);
                 }
-                // S: tempo sync
+                // Sync: tempo sync, green with a glow when on
                 if sync {
-                    s.circle(cell / 2.0, yc, 4.0, LFO_SYNC_GLOW);
+                    s.rect(1.5, 1.5, cell - 3.0, h - 3.0, 2.0, WAVE_GLOW);
                 }
-                let s_color = if sync { LFO_SYNC_ON } else { LFO_SYNC_OFF };
-                text(s, cell / 2.0, yc, 5.0, Anchor::Middle, s_color, "S");
+                let s_color = if sync { pal::GREEN } else { LFO_SYNC_OFF };
+                text(s, cell / 2.0, yc - 0.6, LFO_SYNC_CAP, Anchor::Middle, s_color, "Sync");
                 // the sine and sample & hold: the chosen one green with a glow
                 for (d, on) in [(&sine, !hold), (&sh, hold)] {
                     if on {
@@ -828,22 +830,28 @@ fn mask(c: char) -> u8 {
 }
 
 /// The 11 frames of the seven-segment display: digits 0..9 and blank. The
-/// unlit segments stay faintly visible (a blank is the disabled display).
+/// unlit segments stay faintly visible (a blank is the disabled display). `segb_*` (this fork)
+/// are the same with the unlit segments a little lighter: the BAR, START and LENGTH displays.
 fn digits(out: &mut Vec<Part>) {
-    for c in "0123456789 ".chars() {
-        let name = if c == ' ' {
-            "seg_blank".to_string()
-        } else {
-            format!("seg_{c}")
-        };
-        out.push(Part::new(name, 9.0, 16.0, |s| {
-            for (k, &(x, y, w, h)) in SEG.iter().enumerate() {
-                let on = mask(c) & (1 << k) != 0;
-                s.rect(x, y, w, h, 0.6, if on { pal::LCD_ON } else { pal::LCD_OFF });
-            }
-        }));
+    for (prefix, off) in [("seg", pal::LCD_OFF), ("segb", LCD_OFF_LIGHT)] {
+        for c in "0123456789 ".chars() {
+            let name = if c == ' ' {
+                format!("{prefix}_blank")
+            } else {
+                format!("{prefix}_{c}")
+            };
+            out.push(Part::new(name, 9.0, 16.0, |s| {
+                for (k, &(x, y, w, h)) in SEG.iter().enumerate() {
+                    let on = mask(c) & (1 << k) != 0;
+                    s.rect(x, y, w, h, 0.6, if on { pal::LCD_ON } else { off });
+                }
+            }));
+        }
     }
 }
+
+/// The unlit segments of the BAR, START and LENGTH displays: a little lighter than `LCD_OFF`.
+const LCD_OFF_LIGHT: &str = "#3a1a17";
 
 /// A level meter with 10 segments and 11 states (0 = silent, 10 = clip).
 fn meters(out: &mut Vec<Part>) {
@@ -1118,29 +1126,45 @@ pub const KNOB_Y_303: f32 = 10.0;
 const GENERATE_CAP_303: f32 = 3.6;
 const GENERATE_MARGIN_303: f32 = 4.0;
 
+/// The GENERATE pill's top: just under its label.
+pub const GENERATE_Y_303: f32 = 9.5;
+
 /// The center x of the GENERATE pill and its label: as far right as the label (wider than the
 /// pill) lets it, `GENERATE_MARGIN_303` from the section's right edge.
 pub fn generate_x_303() -> f32 {
     366.0 - GENERATE_MARGIN_303 - font::text_width(GENERATE_CAP_303, "GENERATE") / 2.0
 }
 
-/// The left edge of large knob `k` (0 CUTOFF to 4 ACCENT): the five are spread with six equal
-/// gaps between the waveform/TUNE column's right edge (46) and the GENERATE label's left edge.
-pub fn knob_x_303(k: usize) -> f32 {
-    let right = generate_x_303() - font::text_width(GENERATE_CAP_303, "GENERATE") / 2.0;
-    let gap = (right - 46.0 - 5.0 * KNOB_W_303) / 6.0;
-    46.0 + gap + (KNOB_W_303 + gap) * k as f32
+/// How far a large knob's group reaches from its center: left to the start of its RATE label,
+/// right to the end of its AMOUNT label.
+fn lfo_reach_303() -> (f32, f32) {
+    let half = KNOBS[3].w / 2.0; // the 909's small knob (KNOBS[3])
+    let cap = LFO_LABEL_CAP_303;
+    (
+        LFO_DX_303 + half + 1.5 + font::text_width(cap, "RATE"),
+        LFO_DX_303 + half + 1.5 + font::text_width(cap, "AMOUNT"),
+    )
 }
-/// CUTOFF's LFO knobs (the 909's small knob): their centers' offsets from CUTOFF's center, up
-/// left (RATE) and down right (AMOUNT), close to its ring without touching it; and their
-/// labels' cap height.
+
+/// The left edge of large knob `k` (0 CUTOFF to 4 ACCENT): the five knobs with their LFOs are
+/// spread evenly from the waveform/TUNE column (46; the first RATE label 2 px after it) to the
+/// section's right edge (366; the last AMOUNT label 4 px before it, under GENERATE).
+pub fn knob_x_303(k: usize) -> f32 {
+    let (left, right) = lfo_reach_303();
+    let first = 46.0 + 2.0 + left;
+    let last = 366.0 - GENERATE_MARGIN_303 - right;
+    first + (last - first) * k as f32 / 4.0 - KNOB_W_303 / 2.0
+}
+/// The LFO knobs of each large knob (the 909's small knob): their centers' offsets from the
+/// large knob's center, up left (RATE) and down right (AMOUNT), close to its ring without
+/// touching it; and their labels' cap height.
 pub const LFO_DX_303: f32 = 17.5;
 pub const LFO_DY_303: f32 = 8.0;
 const LFO_LABEL_CAP_303: f32 = 2.4;
 
-/// The centers of CUTOFF's RATE and AMOUNT knobs.
-pub fn lfo_knobs_303() -> ((f32, f32), (f32, f32)) {
-    let (cx, cy) = (knob_x_303(0) + KNOB_W_303 / 2.0, KNOB_Y_303 + KNOB_W_303 / 2.0);
+/// The centers of large knob `k`'s RATE and AMOUNT knobs (0 CUTOFF to 4 ACCENT).
+pub fn lfo_knobs_303(k: usize) -> ((f32, f32), (f32, f32)) {
+    let (cx, cy) = (knob_x_303(k) + KNOB_W_303 / 2.0, KNOB_Y_303 + KNOB_W_303 / 2.0);
     (
         (cx - LFO_DX_303, cy - LFO_DY_303),
         (cx + LFO_DX_303, cy + LFO_DY_303),
@@ -1163,12 +1187,12 @@ pub const WAVE_W_303: f32 = 34.0;
 /// The waveform not chosen (a dull red) and the glow under the one chosen.
 const WAVE_OFF: &str = "#8a3a33";
 const WAVE_GLOW: &str = "#53d86a40";
-/// The LFO mode buttons (`lfo_mode_*`): their size, and the S button's colors off and on.
-pub const LFO_MODE_W: f32 = 30.0;
+/// The LFO mode buttons (`lfo_mode_*`): their size (three equal cells, each as wide as "Sync"
+/// needs), "Sync"'s cap height, and its color when off (a dull blue).
+pub const LFO_MODE_W: f32 = 3.0 * 16.0;
 pub const LFO_MODE_H: f32 = 11.0;
+pub const LFO_SYNC_CAP: f32 = 4.0;
 const LFO_SYNC_OFF: &str = "#34557f";
-const LFO_SYNC_ON: &str = "#8fd0ff";
-const LFO_SYNC_GLOW: &str = "#8fd0ff38";
 
 fn tb303_bg(out: &mut Vec<Part>) {
     out.push(Part::new("bg_tb303", 366.0, 115.0, |s| {
@@ -1186,12 +1210,14 @@ fn tb303_bg(out: &mut Vec<Part>) {
             label(s, knob_x_303(k) + KNOB_W_303 / 2.0, 5.5, 3.6, ink, name);
         }
         label(s, generate_x_303(), 5.5, GENERATE_CAP_303, ink, "GENERATE");
-        // CUTOFF's LFO knobs: RATE left of the upper one, AMOUNT right of the lower one
+        // each large knob's LFO knobs: RATE left of the upper one, AMOUNT right of the lower
         let half = KNOBS[3].w / 2.0; // the 909's small knob (KNOBS[3])
-        let ((rx, ry), (ax, ay)) = lfo_knobs_303();
         let cap = LFO_LABEL_CAP_303;
-        text(s, rx - half - 1.5, ry, cap, Anchor::End, ink, "RATE");
-        text(s, ax + half + 1.5, ay, cap, Anchor::Start, ink, "AMOUNT");
+        for k in 0..5 {
+            let ((rx, ry), (ax, ay)) = lfo_knobs_303(k);
+            text(s, rx - half - 1.5, ry, cap, Anchor::End, ink, "RATE");
+            text(s, ax + half + 1.5, ay, cap, Anchor::Start, ink, "AMOUNT");
+        }
         // The key band: pitch mode and clear, the keys on gray, the flags.
         for (i, (x, y, w, h)) in BAND_303.into_iter().enumerate() {
             s.rect(x, y, w, h, 4.0, if i == 1 { "#7d8087" } else { pal::BLACK });

@@ -1,12 +1,12 @@
-//! The LFO of a bass synth's CUTOFF (this fork; the other knobs may follow): it moves the
-//! filter's cutoff up and down around the value the knob is set to, while the knob stays where
-//! the user put it.
+//! The LFOs of a bass synth's five large knobs (this fork): CUTOFF, RESO, ENV MOD, DECAY and
+//! ACCENT each have their own. An LFO moves its knob's value up and down around the value the
+//! knob is set to, while the knob stays where the user put it.
 //!
-//! Two small knobs drive it: LFO, the rate, and AMOUNT, how far the cutoff moves (0: no
-//! movement, full: the whole range above and below the knob's value, clipped to 0..=127). Under
-//! the CUTOFF knob three buttons choose how: S ties the rate to the song's tempo (off: free, in
-//! hertz), and either the sine (a smooth up and down) or sample & hold (a new random height each
-//! cycle, glided to smoothly, as uneven sines).
+//! Two small knobs drive it: RATE and AMOUNT, how far the value moves (0: no movement, full:
+//! the whole range above and below the knob's value, clipped to 0..=127). Under the knob three
+//! buttons choose how: S ties the rate to the song's tempo (off: free, in hertz), and either the
+//! sine (a smooth up and down) or sample & hold (a new random height each cycle, glided to
+//! smoothly, as uneven sines).
 //!
 //! Free, the rate knob goes from `FREE_MIN_HZ` to `FREE_MAX_HZ` on a log scale. Tied to the
 //! tempo it picks one cycle's length from `SYNC_BEATS`, and while the song plays the cycle is
@@ -33,35 +33,48 @@ pub const TICKS_PER_BEAT: f64 = 192.0;
 pub const RATE_DEFAULT: u8 = 64;
 pub const AMOUNT_DEFAULT: u8 = 0;
 
-/// The synth (0 or 1) whose CUTOFF `id` is, if it is one (`tb303_N.cutoff`).
-pub fn synth_of(id: &str) -> Option<usize> {
-    match id {
-        "tb303_1.cutoff" => Some(0),
-        "tb303_2.cutoff" => Some(1),
+/// The knobs with an LFO, by the name in their id (`tb303_N.<name>`), left to right.
+pub const PARAMS: [&str; 5] = ["cutoff", "reso", "envmod", "decay", "accent"];
+
+/// The synth (0 or 1) of a `tb303_N` section.
+fn synth_of_section(sec: &str) -> Option<usize> {
+    match sec {
+        "tb303_1" => Some(0),
+        "tb303_2" => Some(1),
         _ => None,
     }
 }
 
-/// The ids of a synth's CUTOFF, its LFO's rate and amount knobs and its mode buttons.
-pub fn ids(synth: usize) -> [String; 4] {
-    let n = synth + 1;
+/// The synth and the knob (an index into `PARAMS`) whose LFO a knob `id` is the target of
+/// (`tb303_N.cutoff` .. `tb303_N.accent`).
+pub fn target_of(id: &str) -> Option<(usize, usize)> {
+    let (sec, name) = id.split_once('.')?;
+    Some((synth_of_section(sec)?, PARAMS.iter().position(|p| *p == name)?))
+}
+
+/// The ids of a synth's knob `param` (an index into `PARAMS`), its LFO's RATE and AMOUNT knobs
+/// and its mode buttons.
+pub fn ids(synth: usize, param: usize) -> [String; 4] {
+    let (n, p) = (synth + 1, PARAMS[param]);
     [
-        format!("tb303_{n}.cutoff"),
-        format!("tb303_{n}.cutoff_lfo"),
-        format!("tb303_{n}.cutoff_amt"),
-        format!("tb303_{n}.cutoff_lfo_mode"),
+        format!("tb303_{n}.{p}"),
+        format!("tb303_{n}.{p}_lfo"),
+        format!("tb303_{n}.{p}_amt"),
+        format!("tb303_{n}.{p}_lfo_mode"),
     ]
 }
 
 /// The value a double click sets on an LFO knob (`App::knob`).
 pub fn knob_default(id: &str) -> Option<u8> {
     let (sec, name) = id.split_once('.')?;
-    if !matches!(sec, "tb303_1" | "tb303_2") {
+    synth_of_section(sec)?;
+    let (param, which) = name.rsplit_once('_')?;
+    if !PARAMS.contains(&param) {
         return None;
     }
-    match name {
-        "cutoff_lfo" => Some(RATE_DEFAULT),
-        "cutoff_amt" => Some(AMOUNT_DEFAULT),
+    match which {
+        "lfo" => Some(RATE_DEFAULT),
+        "amt" => Some(AMOUNT_DEFAULT),
         _ => None,
     }
 }
@@ -172,15 +185,15 @@ impl Runner {
 }
 
 impl App {
-    /// A synth's LFO mode buttons.
-    pub fn lfo_mode(&self, synth: usize) -> Mode {
-        self.lfo_mode[synth]
+    /// The mode buttons of a synth's knob `param`'s LFO.
+    pub fn lfo_mode(&self, synth: usize, param: usize) -> Mode {
+        self.lfo_mode[synth][param]
     }
 
-    /// A press on a mode button: `button` 0 turns tempo sync on or off, 1 chooses the sine,
-    /// 2 sample & hold.
-    pub fn press_lfo_mode(&mut self, synth: usize, button: usize) {
-        let m = &mut self.lfo_mode[synth];
+    /// A press on an LFO's mode button: `button` 0 turns tempo sync on or off, 1 chooses the
+    /// sine, 2 sample & hold.
+    pub fn press_lfo_mode(&mut self, synth: usize, param: usize, button: usize) {
+        let m = &mut self.lfo_mode[synth][param];
         let before = *m;
         match button {
             0 => m.sync = !m.sync,
@@ -192,115 +205,126 @@ impl App {
         }
     }
 
-    /// The value the LFO moves a synth's CUTOFF around while it runs (the user's), and the
-    /// value it sent last; None when it does not run.
-    pub fn lfo_base(&self, synth: usize) -> Option<u8> {
-        self.lfo_run[synth].base
+    /// The value an LFO moves its knob's value around while it runs (the user's), and the value
+    /// it sent last; None when it does not run.
+    pub fn lfo_base(&self, synth: usize, param: usize) -> Option<u8> {
+        self.lfo_run[synth][param].base
     }
 
-    pub fn lfo_sent(&self, synth: usize) -> Option<u8> {
-        self.lfo_run[synth].base.and(self.lfo_run[synth].sent)
+    pub fn lfo_sent(&self, synth: usize, param: usize) -> Option<u8> {
+        let run = &self.lfo_run[synth][param];
+        run.base.and(run.sent)
     }
 
-    /// The LFO knobs and buttons at their defaults, and the LFOs stopped (a new or an opened
+    /// All LFO knobs and buttons at their defaults, and the LFOs stopped (a new or an opened
     /// song; an .rbsx then sets its own, rbsx.rs).
     pub(crate) fn lfo_reset_knobs(&mut self) {
+        let to = |v: u8| behavior::knob_from_engine(v as i32);
         for synth in 0..2 {
-            let [_, rate, amount, _] = ids(synth);
-            let to = |v: u8| behavior::knob_from_engine(v as i32);
-            self.panel.put_knob(&rate, to(RATE_DEFAULT));
-            self.panel.put_knob(&amount, to(AMOUNT_DEFAULT));
-            self.lfo_mode[synth] = Mode::default();
-            self.lfo_run[synth].base = None;
-            self.lfo_run[synth].sent = None;
+            for param in 0..PARAMS.len() {
+                let [_, rate, amount, _] = ids(synth, param);
+                self.panel.put_knob(&rate, to(RATE_DEFAULT));
+                self.panel.put_knob(&amount, to(AMOUNT_DEFAULT));
+                self.lfo_mode[synth][param] = Mode::default();
+                self.lfo_run[synth][param].base = None;
+                self.lfo_run[synth][param].sent = None;
+            }
         }
     }
 
-    /// The user moved knob `id`: when the LFO runs on it, its value is the new one to move
+    /// The user moved knob `id`: when an LFO runs on it, its value is the new one to move
     /// around.
     pub(crate) fn lfo_knob_moved(&mut self, id: &str) {
-        if let Some(k) = synth_of(id)
-            && self.lfo_run[k].base.is_some()
+        if let Some((k, p)) = target_of(id)
+            && self.lfo_run[k][p].base.is_some()
         {
-            self.lfo_run[k].base = self.panel.value(id);
+            self.lfo_run[k][p].base = self.panel.value(id);
         }
     }
 
-    /// The knob position of the value the LFO sent last for knob `id`, while it runs on it:
-    /// the arc shows it (the pointer keeps the user's value).
+    /// The knob position of the value an LFO sent last for knob `id`, while it runs on it: the
+    /// arc shows it (the pointer keeps the user's value).
     pub(crate) fn lfo_arc(&self, id: &str) -> Option<i32> {
-        let k = synth_of(id)?;
-        self.lfo_sent(k).map(|v| behavior::knob_from_engine(v as i32))
+        let (k, p) = target_of(id)?;
+        self.lfo_sent(k, p)
+            .map(|v| behavior::knob_from_engine(v as i32))
     }
 
-    /// The mode buttons under a CUTOFF: a click on a third of it presses that button.
+    /// The mode buttons under a knob: a click on a third of them presses that button.
     pub(crate) fn lfo_mode_control(&mut self, ui: &mut Ui, c: &Ctl, r: Rect) {
-        let Some(k) = synth_of(c.id.strip_suffix("_lfo_mode").unwrap_or("")) else {
+        let Some((k, p)) = target_of(c.id.strip_suffix("_lfo_mode").unwrap_or("")) else {
             return;
         };
         let resp = ui.interact(r, egui::Id::unique(("lfo_mode", &c.id)), Sense::click());
         let pressed = ui.input(|i| i.pointer.button_pressed(PointerButton::Primary));
         if pressed
             && resp.contains_pointer()
-            && let Some(p) = ui.input(|i| i.pointer.press_origin())
+            && let Some(at) = ui.input(|i| i.pointer.press_origin())
         {
-            let third = ((p.x - r.min.x) / r.width() * 3.0).floor().clamp(0.0, 2.0) as usize;
-            self.press_lfo_mode(k, third);
+            let third = ((at.x - r.min.x) / r.width() * 3.0).floor().clamp(0.0, 2.0) as usize;
+            self.press_lfo_mode(k, p, third);
         }
-        let m = self.lfo_mode[k];
+        let m = self.lfo_mode[k][p];
         let hold = m.shape == Shape::SampleHold;
         let name = format!("lfo_mode_{}{}", m.sync as u8, hold as u8);
         app::paint_part(ui, &name, r);
     }
 
-    /// One step of both LFOs, after the panel took the engine's values: a running LFO sends
-    /// its CUTOFF's moved value to the engine and puts the user's value back on the knob. An
-    /// LFO whose amount goes to 0 stops and sends the user's value back.
+    /// One step of every LFO, after the panel took the engine's values: a running LFO sends its
+    /// knob's moved value to the engine and puts the user's value back on the knob. An LFO
+    /// whose amount goes to 0 stops and sends the user's value back.
     pub(crate) fn lfo_step(&mut self, ctx: &Context, now: f64) {
         let dt = (now - self.lfo_time.unwrap_or(now)).clamp(0.0, 0.25);
         self.lfo_time = Some(now);
         let mut running = false;
         for k in 0..2 {
-            let [cutoff, rate, amount, _] = ids(k);
-            let unit = |v: Option<u8>, d: u8| v.unwrap_or(d) as f64 / 127.0;
-            let amount = unit(self.panel.value(&amount), AMOUNT_DEFAULT);
-            let rate = unit(self.panel.value(&rate), RATE_DEFAULT);
-            let Some(link) = &mut self.link else {
-                continue;
-            };
-            let run = &mut self.lfo_run[k];
-            if amount <= 0.0 {
-                if let Some(b) = run.base.take() {
-                    link.send_value(&cutoff, b);
-                    self.panel.adopt(&cutoff, b as i32);
-                }
-                run.sent = None;
-                continue;
+            for p in 0..PARAMS.len() {
+                running |= self.lfo_step_one(k, p, dt);
             }
-            let base = match run.base {
-                Some(b) => b,
-                None => {
-                    let b = self.panel.value(&cutoff).unwrap_or(0);
-                    run.base = Some(b);
-                    b
-                }
-            };
-            let t = &self.panel.transport;
-            let position = t.playing.then_some(t.position);
-            let mode = self.lfo_mode[k];
-            run.advance(dt, rate, mode, t.tempo, position);
-            let v = modulate(base, amount, run.value(mode.shape));
-            if run.sent != Some(v) {
-                link.send_value(&cutoff, v);
-                run.sent = Some(v);
-            }
-            // the knob shows the user's value, not the engine's moved one
-            self.panel.adopt(&cutoff, base as i32);
-            running = true;
         }
         if running {
             ctx.request_repaint_after(std::time::Duration::from_millis(16));
         }
+    }
+
+    /// [`App::lfo_step`] for synth `k`'s knob `p`: whether its LFO runs.
+    fn lfo_step_one(&mut self, k: usize, p: usize, dt: f64) -> bool {
+        let [knob, rate, amount, _] = ids(k, p);
+        let unit = |v: Option<u8>, d: u8| v.unwrap_or(d) as f64 / 127.0;
+        let amount = unit(self.panel.value(&amount), AMOUNT_DEFAULT);
+        let rate = unit(self.panel.value(&rate), RATE_DEFAULT);
+        let Some(link) = &mut self.link else {
+            return false;
+        };
+        let run = &mut self.lfo_run[k][p];
+        if amount <= 0.0 {
+            if let Some(b) = run.base.take() {
+                link.send_value(&knob, b);
+                self.panel.adopt(&knob, b as i32);
+            }
+            run.sent = None;
+            return false;
+        }
+        let base = match run.base {
+            Some(b) => b,
+            None => {
+                let b = self.panel.value(&knob).unwrap_or(0);
+                run.base = Some(b);
+                b
+            }
+        };
+        let t = &self.panel.transport;
+        let position = t.playing.then_some(t.position);
+        let mode = self.lfo_mode[k][p];
+        run.advance(dt, rate, mode, t.tempo, position);
+        let v = modulate(base, amount, run.value(mode.shape));
+        if run.sent != Some(v) {
+            link.send_value(&knob, v);
+            run.sent = Some(v);
+        }
+        // the knob shows the user's value, not the engine's moved one
+        self.panel.adopt(&knob, base as i32);
+        true
     }
 }
 

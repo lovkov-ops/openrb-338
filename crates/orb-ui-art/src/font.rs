@@ -23,9 +23,18 @@ fn gap_units(cap: f32) -> f32 {
 
 /// (width, path) of a glyph on a 6-unit-high grid, or None.
 fn glyph(c: char) -> Option<(f32, &'static str)> {
-    // The few small letters the wordmark OpenRB-338x needs: x-height 4 (y 2 to 6), the p's
-    // stem down to 7.2. Any other small letter is drawn as its capital.
+    // The few small letters the wordmark OpenRB-338x and the LFO's "Sync" need: x-height 4
+    // (y 2 to 6), the p's and y's stems down to 7.2. Any other small letter is drawn as its
+    // capital.
     match c {
+        'c' => {
+            return Some((
+                3.2,
+                "M3.1 2.8 C2.8 2.3 2.3 2 1.7 2 C0.7 2 0.1 2.9 0.1 4 C0.1 5.1 0.7 6 1.7 6 \
+                 C2.3 6 2.8 5.7 3.1 5.2",
+            ));
+        }
+        'y' => return Some((3.4, "M0 2 L1.7 5.8 M3.4 2 L1.3 7.2")),
         'e' => {
             return Some((
                 3.6,

@@ -33,8 +33,8 @@ const HEADER: &str = "OpenRB-338x GENERATE 1";
 /// The file extension of a song with the GENERATE settings.
 pub const EXTENSION: &str = "rbsx";
 
-/// What the GENERATE menu keeps of both synths (`App::gen_state`), and the CUTOFF LFO's
-/// settings (lfo.rs).
+/// What the GENERATE menu keeps of both synths (`App::gen_state`), and the LFOs' settings of
+/// their five large knobs (lfo.rs).
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct GenState {
     pub scale_keys: ScaleKeys,
@@ -42,11 +42,11 @@ pub struct GenState {
     pub sel: [[[bool; 5]; 2]; 3],
     /// Indexed by row (`Op`), synth: the row's name is green.
     pub done: [[bool; 2]; 3],
-    /// Each synth's CUTOFF LFO.
-    pub lfo: [LfoState; 2],
+    /// Each synth's LFOs, by knob (`lfo::PARAMS`).
+    pub lfo: [[LfoState; 5]; 2],
 }
 
-/// A CUTOFF LFO's settings: its rate and amount knobs' values (0..=127) and its buttons.
+/// An LFO's settings: its RATE and AMOUNT knobs' values (0..=127) and its buttons.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct LfoState {
     pub rate: u8,
@@ -104,15 +104,17 @@ pub fn encode(state: &GenState) -> Vec<u8> {
             let done = state.done[op as usize][synth] as u8;
             lines.push(format!("baze{n}.{}.done={done}", op_name(op)));
         }
-        let l = state.lfo[synth];
-        lines.push(format!("baze{n}.cutoff.lfo={}", l.rate));
-        lines.push(format!("baze{n}.cutoff.amount={}", l.amount));
-        lines.push(format!("baze{n}.cutoff.sync={}", l.mode.sync as u8));
-        let shape = match l.mode.shape {
-            lfo::Shape::Sine => "sine",
-            lfo::Shape::SampleHold => "sh",
-        };
-        lines.push(format!("baze{n}.cutoff.shape={shape}"));
+        for (param, name) in lfo::PARAMS.iter().enumerate() {
+            let l = state.lfo[synth][param];
+            lines.push(format!("baze{n}.{name}.lfo={}", l.rate));
+            lines.push(format!("baze{n}.{name}.amount={}", l.amount));
+            lines.push(format!("baze{n}.{name}.sync={}", l.mode.sync as u8));
+            let shape = match l.mode.shape {
+                lfo::Shape::Sine => "sine",
+                lfo::Shape::SampleHold => "sh",
+            };
+            lines.push(format!("baze{n}.{name}.shape={shape}"));
+        }
     }
     let mut body = lines.join("\n").into_bytes();
     body.push(b'\n');
@@ -166,19 +168,22 @@ pub fn decode(body: &[u8]) -> Option<GenState> {
             state.done[op as usize][synth] =
                 get(&format!("baze{n}.{}.done", op_name(op))) == Some("1");
         }
-        let l = &mut state.lfo[synth];
-        let num = |name: &str, d: u8| {
-            get(&format!("baze{n}.cutoff.{name}"))
-                .and_then(|v| v.parse::<u8>().ok())
-                .map_or(d, |v| v.min(127))
-        };
-        l.rate = num("lfo", lfo::RATE_DEFAULT);
-        l.amount = num("amount", lfo::AMOUNT_DEFAULT);
-        l.mode.sync = get(&format!("baze{n}.cutoff.sync")) == Some("1");
-        l.mode.shape = match get(&format!("baze{n}.cutoff.shape")) {
-            Some("sh") => lfo::Shape::SampleHold,
-            _ => lfo::Shape::Sine,
-        };
+        for (param, name) in lfo::PARAMS.iter().enumerate() {
+            let l = &mut state.lfo[synth][param];
+            let key = |field: &str| format!("baze{n}.{name}.{field}");
+            let num = |field: &str, d: u8| {
+                get(&key(field))
+                    .and_then(|v| v.parse::<u8>().ok())
+                    .map_or(d, |v| v.min(127))
+            };
+            l.rate = num("lfo", lfo::RATE_DEFAULT);
+            l.amount = num("amount", lfo::AMOUNT_DEFAULT);
+            l.mode.sync = get(&key("sync")) == Some("1");
+            l.mode.shape = match get(&key("shape")) {
+                Some("sh") => lfo::Shape::SampleHold,
+                _ => lfo::Shape::Sine,
+            };
+        }
     }
     Some(state)
 }
@@ -306,12 +311,14 @@ impl App {
     /// The GENERATE menu's settings of both synths, as an `.rbsx` keeps them.
     pub fn gen_state(&self) -> GenState {
         let lfo = std::array::from_fn(|k| {
-            let [_, rate, amount, _] = lfo::ids(k);
-            LfoState {
-                rate: self.panel.value(&rate).unwrap_or(lfo::RATE_DEFAULT),
-                amount: self.panel.value(&amount).unwrap_or(lfo::AMOUNT_DEFAULT),
-                mode: self.lfo_mode[k],
-            }
+            std::array::from_fn(|p| {
+                let [_, rate, amount, _] = lfo::ids(k, p);
+                LfoState {
+                    rate: self.panel.value(&rate).unwrap_or(lfo::RATE_DEFAULT),
+                    amount: self.panel.value(&amount).unwrap_or(lfo::AMOUNT_DEFAULT),
+                    mode: self.lfo_mode[k][p],
+                }
+            })
         });
         GenState {
             scale_keys: self.scale_keys,
@@ -331,12 +338,14 @@ impl App {
         self.op_picking = None;
         // the LFOs stop; their knobs and buttons as the song kept them
         self.lfo_reset_knobs();
-        for (k, l) in state.lfo.iter().enumerate() {
-            let [_, rate, amount, _] = lfo::ids(k);
-            let to = |v: u8| crate::behavior::knob_from_engine(v as i32);
-            self.panel.put_knob(&rate, to(l.rate));
-            self.panel.put_knob(&amount, to(l.amount));
-            self.lfo_mode[k] = l.mode;
+        let to = |v: u8| crate::behavior::knob_from_engine(v as i32);
+        for (k, knobs) in state.lfo.iter().enumerate() {
+            for (p, l) in knobs.iter().enumerate() {
+                let [_, rate, amount, _] = lfo::ids(k, p);
+                self.panel.put_knob(&rate, to(l.rate));
+                self.panel.put_knob(&amount, to(l.amount));
+                self.lfo_mode[k][p] = l.mode;
+            }
         }
     }
 }
@@ -364,7 +373,7 @@ mod tests {
         st.sel[Op::Move as usize][0] = [false, false, false, true, false];
         st.done[Op::Random as usize][0] = true;
         st.done[Op::Move as usize][0] = true;
-        st.lfo[1] = LfoState {
+        st.lfo[1][0] = LfoState {
             rate: 90,
             amount: 40,
             mode: lfo::Mode {
@@ -389,6 +398,7 @@ mod tests {
         assert!(text.contains("baze2.cutoff.lfo=90\nbaze2.cutoff.amount=40\n"));
         assert!(text.contains("baze2.cutoff.sync=1\nbaze2.cutoff.shape=sh\n"));
         assert!(text.contains("baze1.cutoff.amount=0\n"));
+        assert!(text.contains("baze2.decay.lfo=64\nbaze2.decay.amount=0\n"));
         assert_eq!(decode(&encode(&GenState::default())), Some(GenState::default()));
     }
 

@@ -7,10 +7,10 @@
 use std::collections::HashMap;
 
 use crate::parts::{
-    CLEAR_Y_303, EDIT_303, FLAGS_303, KEY_ROWS_303, KNOB_SWEEP, KNOB_W_303, KNOB_Y_303, KNOBS,
-    KNOBS_909, LEFT_X_303, LFO_MODE_W, LOGO_X, LOGO_Y, MOD_VIEW_808, generate_x_303, knob_x_303,
-    lfo_knobs_303, PITCH_LED_Y_303, PITCH_Y_303, STEPS_Y_909, TUNE_Y_303, WAVE_X_303, WAVE_Y_303,
-    WHITE_303, column_909, knob_y_909,
+    CLEAR_Y_303, EDIT_303, FLAGS_303, GENERATE_Y_303, KEY_ROWS_303, KNOBS, KNOBS_909, KNOB_SWEEP,
+    KNOB_W_303, KNOB_Y_303, LEFT_X_303, LFO_MODE_W, LOGO_X, LOGO_Y, MOD_VIEW_808, PITCH_LED_Y_303,
+    PITCH_Y_303, STEPS_Y_909, TUNE_Y_303, WAVE_X_303, WAVE_Y_303, WHITE_303, column_909,
+    generate_x_303, knob_x_303, knob_y_909, lfo_knobs_303,
 };
 use crate::svg::{Part, Svg, arc_path, n, pal};
 
@@ -140,11 +140,27 @@ impl Builder<'_> {
 
     /// A seven-segment display: the rectangle holds `digits` frames of 9 x 16.
     fn display(&mut self, id: &str, x: f32, y: f32, w: f32, digits: usize, text: &str) {
+        self.display_of("seg", id, x, y, w, digits, text);
+    }
+
+    /// A display drawn with the digit parts `<prefix>_0..9` and `<prefix>_blank` ("seg", or
+    /// this fork's "segb" with lighter unlit segments).
+    #[allow(clippy::too_many_arguments)]
+    fn display_of(
+        &mut self,
+        prefix: &str,
+        id: &str,
+        x: f32,
+        y: f32,
+        w: f32,
+        digits: usize,
+        text: &str,
+    ) {
         self.layout.ctls.push(Ctl {
             id: format!("{}.{id}", self.section),
             section: self.section.clone(),
             kind: "display",
-            part: "seg_0..9,seg_blank".into(),
+            part: format!("{prefix}_0..9,{prefix}_blank"),
             x: self.ox + x,
             y: self.oy + y,
             w,
@@ -214,13 +230,14 @@ fn transport(b: &mut Builder) {
     b.part("rewind", "wind", "btn_rewind_rest", 160.0, 21.0);
     b.part("ff", "wind", "btn_ff_rest", 192.0, 21.0);
     b.part("record", "toggle", "btn_record_rest", 224.0, 21.0);
-    b.display("bar", 271.0, 27.0, 27.0, 3, "  5");
+    // BAR, START and LENGTH: their unlit segments a little lighter (this fork)
+    b.display_of("segb", "bar", 271.0, 27.0, 27.0, 3, "  5");
     b.part("bar_up", "wind", "arrow_inc_rest", 300.0, 26.0);
     b.part("bar_down", "wind", "arrow_dec_rest", 300.0, 35.0);
-    b.display("loop_start", 329.0, 27.0, 27.0, 3, "  5");
+    b.display_of("segb", "loop_start", 329.0, 27.0, 27.0, 3, "  5");
     b.part("loop_start_up", "repeat", "arrow_inc_rest", 358.0, 26.0);
     b.part("loop_start_down", "repeat", "arrow_dec_rest", 358.0, 35.0);
-    b.display("loop_length", 372.0, 27.0, 27.0, 3, "  4");
+    b.display_of("segb", "loop_length", 372.0, 27.0, 27.0, 3, "  4");
     b.part("loop_length_up", "repeat", "arrow_inc_rest", 401.0, 26.0);
     b.part("loop_length_down", "repeat", "arrow_dec_rest", 401.0, 35.0);
     // level with the length arrows (26..44)
@@ -274,33 +291,34 @@ fn tb303(b: &mut Builder, r: usize) {
     // TUNE, small, under the waveform in its column; the other five spread along the paper
     b.knob("tune", KNOB_303_SMALL, LEFT_X_303 - 7.5, TUNE_Y_303, 0.5);
     let vals = [0.35, 0.6, 0.45, 0.4, 0.55];
+    let half = KNOBS[KNOB_909].w / 2.0;
     for (k, name) in ["cutoff", "reso", "envmod", "decay", "accent"]
         .into_iter()
         .enumerate()
     {
         b.knob(name, KNOB_303, knob_x_303(k), KNOB_Y_303, vals[k]);
+        // its LFO (this fork): the RATE knob up left of it, under its label, the AMOUNT knob
+        // down right of it (the 909's small knob), and the mode buttons (S, sine, sample &
+        // hold) under it
+        let ((rx, ry), (ax, ay)) = lfo_knobs_303(k);
+        let lfo = format!("{name}_lfo");
+        b.knob_of("lfoknob", &lfo, KNOB_909, rx - half, ry - half, 0.5);
+        b.knob_of("lfoknob", &format!("{name}_amt"), KNOB_909, ax - half, ay - half, 0.0);
+        b.part(
+            &format!("{name}_lfo_mode"),
+            "lfomode",
+            "lfo_mode_00",
+            knob_x_303(k) + KNOB_W_303 / 2.0 - LFO_MODE_W / 2.0,
+            KNOB_Y_303 + KNOB_W_303 + 2.0,
+        );
     }
-    // CUTOFF's LFO (this fork): the rate knob up left of it, under its label, the amount knob
-    // down right of it (the 909's small knob), and the mode buttons (S, sine, sample & hold)
-    // under it.
-    let (cx0, half) = (knob_x_303(0), KNOBS[KNOB_909].w / 2.0);
-    let ((rx, ry), (ax, ay)) = lfo_knobs_303();
-    b.knob_of("lfoknob", "cutoff_lfo", KNOB_909, rx - half, ry - half, 0.5);
-    b.knob_of("lfoknob", "cutoff_amt", KNOB_909, ax - half, ay - half, 0.0);
-    b.part(
-        "cutoff_lfo_mode",
-        "lfomode",
-        "lfo_mode_00",
-        cx0 + KNOB_W_303 / 2.0 - LFO_MODE_W / 2.0,
-        KNOB_Y_303 + KNOB_W_303 + 2.0,
-    );
     // GENERATE: a pill in the slot after the knobs, level with the knobs' centers.
     b.part(
         "generate",
         "trigger",
         "btn_pill_22x10_rest",
         generate_x_303() - 11.0,
-        KNOB_Y_303 + KNOB_W_303 / 2.0 - 5.0,
+        GENERATE_Y_303,
     );
     let (ex, ey) = EDIT_303;
     b.display("edit_step", ex, ey, 19.0, 2, " 1");
@@ -617,12 +635,13 @@ pub fn compose(parts: &[Part], l: &Layout) -> String {
             }
             Extra::Digits { n: count, text } => {
                 let chars: Vec<char> = text.chars().collect();
+                let prefix = c.part.split('_').next().unwrap_or("seg");
                 for i in 0..*count {
                     let ch = chars.get(i).copied().unwrap_or(' ');
                     let name = if ch == ' ' {
-                        "seg_blank".to_string()
+                        format!("{prefix}_blank")
                     } else {
-                        format!("seg_{ch}")
+                        format!("{prefix}_{ch}")
                     };
                     let x = c.x + c.w - 9.0 * (*count - i) as f32;
                     s.g_at(x, c.y).raw(&get(&name).body).end_g();
