@@ -34,7 +34,7 @@ pub const URL: &str = "https://github.com/pingw33n/openrb-338";
 pub const FORK_CREDIT: (&str, &str, &str) = (
     "Xtended features injected by",
     "lovkov-ops",
-    "https://github.com/lovkov-ops/openrb-338",
+    "https://github.com/lovkov-ops/OpenRB-338x",
 );
 /// The user's public collections, shown under the project page as `label url` (task-138).
 /// The user's song collection.
