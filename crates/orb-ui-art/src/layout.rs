@@ -7,9 +7,10 @@
 use std::collections::HashMap;
 
 use crate::parts::{
-    CLEAR_Y_303, EDIT_303, FLAGS_303, GENERATE_X_303, KEY_ROWS_303, KNOB_DX_303, KNOB_SWEEP,
-    KNOB_X0_303, KNOBS, KNOBS_909, LEFT_X_303, LOGO_X, LOGO_Y, MOD_VIEW_808, PITCH_LED_Y_303,
-    PITCH_Y_303, STEPS_Y_909, WHITE_303, column_909, knob_y_909,
+    CLEAR_Y_303, EDIT_303, FLAGS_303, KEY_ROWS_303, KNOB_SWEEP, KNOB_W_303, KNOB_Y_303, KNOBS,
+    KNOBS_909, LEFT_X_303, LOGO_X, LOGO_Y, MOD_VIEW_808, generate_x_303, knob_x_303,
+    PITCH_LED_Y_303, PITCH_Y_303, STEPS_Y_909, TUNE_Y_303, WAVE_X_303, WAVE_Y_303, WHITE_303,
+    column_909, knob_y_909,
 };
 use crate::svg::{Part, Svg, arc_path, n, pal};
 
@@ -155,6 +156,7 @@ const KNOB_808_RED: usize = 1;
 const KNOB_808_WHITE: usize = 2;
 const KNOB_909: usize = 3;
 const KNOB_22: usize = 4;
+const KNOB_303_SMALL: usize = 5;
 
 /// The control rectangles of the whole panel, with the demo state used for
 /// the composed preview (pattern mode off, song mode, playing).
@@ -260,22 +262,25 @@ fn pattern(b: &mut Builder, r: usize) {
 fn tb303(b: &mut Builder, r: usize) {
     let oy = 50.0 + 115.0 * r as f32;
     b.section(&format!("tb303_{}", r + 1), "bg_tb303", 90.0, oy);
-    // The waveform switch carries the saw and the square on its frame, under the label.
-    b.part("wave", "hswitch", "switch_wave_0", 15.0, 20.0);
-    let vals = [0.5, 0.35, 0.6, 0.45, 0.4, 0.55];
-    for (k, name) in ["tune", "cutoff", "reso", "envmod", "decay", "accent"]
+    // The waveform: the saw and the square on one frame over the pitch/clear block, under the
+    // label; a click on either chooses it (orb-ui's App::control).
+    b.part("wave", "hswitch", "switch_wave_0", WAVE_X_303, WAVE_Y_303);
+    // TUNE, small, under the waveform in its column; the other five spread along the paper
+    b.knob("tune", KNOB_303_SMALL, LEFT_X_303 - 7.5, TUNE_Y_303, 0.5);
+    let vals = [0.35, 0.6, 0.45, 0.4, 0.55];
+    for (k, name) in ["cutoff", "reso", "envmod", "decay", "accent"]
         .into_iter()
         .enumerate()
     {
-        b.knob(name, KNOB_303, KNOB_X0_303 + KNOB_DX_303 * k as f32, 12.0, vals[k]);
+        b.knob(name, KNOB_303, knob_x_303(k), KNOB_Y_303, vals[k]);
     }
-    // GENERATE: a pill in the slot after the knobs, level with the knobs' centers (y 27).
+    // GENERATE: a pill in the slot after the knobs, level with the knobs' centers.
     b.part(
         "generate",
         "trigger",
         "btn_pill_22x10_rest",
-        GENERATE_X_303 - 11.0,
-        22.0,
+        generate_x_303() - 11.0,
+        KNOB_Y_303 + KNOB_W_303 / 2.0 - 5.0,
     );
     let (ex, ey) = EDIT_303;
     b.display("edit_step", ex, ey, 19.0, 2, " 1");

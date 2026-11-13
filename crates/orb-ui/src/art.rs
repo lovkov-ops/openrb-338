@@ -55,15 +55,16 @@ pub struct KnobDesign {
     pub arc: [u8; 3],
 }
 
-pub const KNOBS: [KnobDesign; 5] = [
+pub const KNOBS: [KnobDesign; 6] = [
     KnobDesign {
+        // (this fork: 10% under the original 30 px)
         name: "knob_303",
-        w: 30.0,
-        h: 30.0,
-        cx: 15.0,
-        cy: 15.0,
-        ring_r: 13.6,
-        ring_w: 1.6,
+        w: 27.0,
+        h: 27.0,
+        cx: 13.5,
+        cy: 13.5,
+        ring_r: 12.24,
+        ring_w: 1.44,
         arc: [0xf0, 0x8a, 0x24],
     },
     KnobDesign {
@@ -105,6 +106,17 @@ pub const KNOBS: [KnobDesign; 5] = [
         ring_r: 10.1,
         ring_w: 1.4,
         arc: [0xff, 0xb0, 0x00],
+    },
+    // the 303's small TUNE knob (this fork)
+    KnobDesign {
+        name: "knob_303_small",
+        w: 15.0,
+        h: 15.0,
+        cx: 7.5,
+        cy: 7.5,
+        ring_r: 6.8,
+        ring_w: 0.9,
+        arc: [0xf0, 0x8a, 0x24],
     },
 ];
 

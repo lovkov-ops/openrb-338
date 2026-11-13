@@ -162,17 +162,27 @@ fn fader_jumps_to_the_pointer_and_drags() {
 #[test]
 fn two_position_switch_flips_on_a_click_anywhere() {
     let mut h = Harness::new();
-    // The 303 waveform switch is horizontal, 16 x 12 at (119, 71). A click on the half
-    // that is already selected flips it too.
-    let left = Pos2::new(119.0 + 3.0, 77.0);
-    h.move_to(left);
+    // The 303 waveform (this fork) is the saw and the square side by side at (102, 59.5),
+    // 34 x 14: a click on a picture chooses it, a click on the chosen one keeps it.
+    let saw = Pos2::new(102.0 + 8.0, 66.5);
+    let square = Pos2::new(102.0 + 26.0, 66.5);
+    assert_eq!(h.app.panel.switch("tb303_1.wave"), 0);
+    h.move_to(saw);
+    h.down(Modifiers::NONE);
+    h.up();
+    assert_eq!(h.app.panel.switch("tb303_1.wave"), 0, "the saw was chosen: it stays");
+    h.move_to(square);
     h.down(Modifiers::NONE);
     assert_eq!(h.app.panel.switch("tb303_1.wave"), 1);
-    // Dragging does not flip it back.
-    h.move_to(Pos2::new(119.0 + 13.0, 77.0));
+    // Dragging does not change it back.
+    h.move_to(saw);
     assert_eq!(h.app.panel.switch("tb303_1.wave"), 1);
     h.up();
-    h.move_to(left);
+    h.move_to(square);
+    h.down(Modifiers::NONE);
+    h.up();
+    assert_eq!(h.app.panel.switch("tb303_1.wave"), 1, "the square was chosen: it stays");
+    h.move_to(saw);
     h.down(Modifiers::NONE);
     h.up();
     assert_eq!(h.app.panel.switch("tb303_1.wave"), 0);

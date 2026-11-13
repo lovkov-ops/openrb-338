@@ -879,9 +879,14 @@ impl App {
                             self.panel.press(&c.id, now);
                         }
                     }
-                    // A click anywhere on a two-position switch flips the position it shows.
+                    // A click anywhere on a two-position switch flips the position it shows; the
+                    // 303's waveform (this fork) is two pictures: a click on the saw (left
+                    // half) or the square (right half) chooses that one.
                     "hswitch" | "vswitch" if self.first_press(ui, c, &r) => {
-                        let v = 1 - self.panel.switch_position(&c.id);
+                        let v = match r.interact_pointer_pos() {
+                            Some(p) if c.name() == "wave" => (p.x >= rect.center().x) as u8,
+                            _ => 1 - self.panel.switch_position(&c.id),
+                        };
                         self.panel.set_switch(&c.id, v);
                     }
                     _ => {}

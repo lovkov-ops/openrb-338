@@ -82,11 +82,15 @@ backgrounds (808: 12 cells of 22 px at (10, 71); 909: the 12 instrument chips of
 (4, 4) with the edges of `EDGES_909` in `parts.rs`, and the name row at (26, 74)). The 303's key
 band (`BAND_303`) is three blocks of one height (y 56..112; this fork lowered the top from 46
 to make room under the knobs, rows in `KEY_ROWS_303`): pitch mode and clear (black), the
-keys (gray), and the flags with the edit step display in their top row (black). The six knobs
-start at `KNOB_X0_303` (68.5), `KNOB_DX_303` (43.5) apart, followed by the GENERATE pill
-(22 x 10, centered at `GENERATE_X_303`, y 22), all spread evenly between the waveform switch and
-the section's right edge; the waveform switch is labeled "WAVEFORM" and sits at (15, 20)
-(task-115; the placement is in docs/ui_spec.md section 19).
+keys (gray), and the flags with the edit step display in their top row (black). Over the
+pitch/clear block and as wide (34) is this fork's left column: "WAVEFORM" in the row of the
+knobs' labels, the waveform switch under it at (12, 9.5) (the saw and the square, the chosen one
+green), and under that the small TUNE knob (`knob_303_small`, 15 x 15 at y 32.5) with its label.
+The GENERATE pill (22 x 10) and its label sit as far right as the label lets them, 4 px from the
+section's right edge (`generate_x_303`); the five large knobs (CUTOFF to ACCENT, 27 px, y 10)
+are spread with six equal gaps between the column (46) and the GENERATE label
+(`knob_x_303`) (task-115; the original placement is in
+docs/ui_spec.md section 19).
 
 The logo is this fork's wordmark `OpenRB-338x` (`OpenRB-` ink, `338` orange, `x` white, from
 x = 5), its underline of four segments in the 808's step colors
@@ -128,7 +132,8 @@ are in `KNOBS` (`src/parts.rs`) and below:
 
 | Knob | Size | center (cx, cy) | ring r / width | arc color | Used for |
 |---|---|---|---|---|---|
-| `knob_303` | 30 x 30 | (15, 15) | 13.6 / 1.6 | `#f08a24` | the bass synth's six knobs |
+| `knob_303` | 27 x 27 | (13.5, 13.5) | 12.24 / 1.44 | `#f08a24` | the bass synth's five large knobs (this fork: 10% under the original 30) |
+| `knob_303_small` | 15 x 15 | (7.5, 7.5) | 6.8 / 0.9 | `#f08a24` | the bass synth's small TUNE knob (this fork) |
 | `knob_808_red` | 13 x 13 | (6.5, 6.5) | 5.9 / 0.9 | `#f2c531` | drum machine A level knobs |
 | `knob_808_white` | 13 x 13 | (6.5, 6.5) | 5.9 / 0.9 | `#f08a24` | drum machine A tone, tuning, decay |
 | `knob_909` | 12 x 12 | (6, 6) | 5.4 / 0.9 | `#e2413b` | drum machine B knobs and flam |
@@ -139,7 +144,7 @@ are in `KNOBS` (`src/parts.rs`) and below:
 - `fader_track` 15 x 54 and `fader_handle` 15 x 11. The handle's top is at
   `(1 - v) * 43` px from the track's top (`v` = position / 999; travel 43 px); the track holds the
   scale ticks and slot. Used by the mixer levels, the master and the four PCF faders.
-- Two-position switches, `_0` / `_1` (0 = left or top): `switch_wave_` 40 x 14 (303 waveform,
+- Two-position switches, `_0` / `_1` (0 = left or top): `switch_wave_` 34 x 14 (303 waveform: saw | square, the chosen one green,
   the saw and the square printed on its frame: 0 saw, 1 square), `switch_808_` 11 x 17 (shared slots: 0 upper label, 1 lower), `switch_fx_`
   9 x 18 (PCF BP/LP; delay triplet/16th), `switch_mode_` 26 x 19 (transport: 0 pattern, 1 song).
   A click anywhere on a two-position switch flips it.

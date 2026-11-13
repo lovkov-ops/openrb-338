@@ -33,19 +33,20 @@ pub struct KnobDesign {
     pub track: &'static str,
 }
 
-pub const KNOBS: [KnobDesign; 5] = [
+pub const KNOBS: [KnobDesign; 6] = [
     KnobDesign {
+        // (this fork: 10% under the original 30 px, the same look)
         name: "knob_303",
-        w: 30.0,
-        h: 30.0,
-        cx: 15.0,
-        cy: 15.0,
-        ring_r: 13.6,
-        ring_w: 1.6,
-        body_r: 11.0,
-        ptr0: 3.0,
-        ptr1: 9.6,
-        ptr_w: 1.8,
+        w: 27.0,
+        h: 27.0,
+        cx: 13.5,
+        cy: 13.5,
+        ring_r: 12.24,
+        ring_w: 1.44,
+        body_r: 9.9,
+        ptr0: 2.7,
+        ptr1: 8.64,
+        ptr_w: 1.62,
         body: pal::STEEL,
         pointer: pal::BLACK,
         arc: pal::ORANGE,
@@ -119,6 +120,24 @@ pub const KNOBS: [KnobDesign; 5] = [
         pointer: pal::INK,
         arc: pal::AMBER,
         track: "#00000040",
+    },
+    // The 303's small TUNE knob (this fork), under the waveform: knob_303 at half size.
+    KnobDesign {
+        name: "knob_303_small",
+        w: 15.0,
+        h: 15.0,
+        cx: 7.5,
+        cy: 7.5,
+        ring_r: 6.8,
+        ring_w: 0.9,
+        body_r: 5.5,
+        ptr0: 1.5,
+        ptr1: 4.8,
+        ptr_w: 1.0,
+        body: pal::STEEL,
+        pointer: pal::BLACK,
+        arc: pal::ORANGE,
+        track: "#00000026",
     },
 ];
 
@@ -211,7 +230,9 @@ fn switch(out: &mut Vec<Part>, name: &str, w: f32, h: f32, horizontal: bool) {
 }
 
 /// The saw and square glyphs with their left edges at `sx` and `qx`, 6 px tall around `yc`.
-fn wave_glyphs(s: &mut Svg, sx: f32, qx: f32, yc: f32, color: &str) {
+/// The saw (at `sx`) and the square (at `qx`) of the 303's waveform, each 7.5 x 6 around
+/// `yc`, in their own colors and stroke width.
+fn wave_glyphs(s: &mut Svg, sx: f32, qx: f32, yc: f32, colors: (&str, &str), width: f32) {
     let (t, b) = (yc - 3.0, yc + 3.0);
     s.path_stroke(
         &format!(
@@ -219,8 +240,8 @@ fn wave_glyphs(s: &mut Svg, sx: f32, qx: f32, yc: f32, color: &str) {
             n(sx + 3.75),
             n(sx + 7.5)
         ),
-        color,
-        1.0,
+        colors.0,
+        width,
     );
     s.path_stroke(
         &format!(
@@ -229,8 +250,8 @@ fn wave_glyphs(s: &mut Svg, sx: f32, qx: f32, yc: f32, color: &str) {
             n(qx + 5.0),
             n(qx + 7.5)
         ),
-        color,
-        1.0,
+        colors.1,
+        width,
     );
 }
 
@@ -325,18 +346,21 @@ fn mixsw_body(s: &mut Svg, label_: &str, on: bool) {
 }
 
 fn switches(out: &mut Vec<Part>) {
-    // The 303's waveform switch: one 40 x 14 black frame with the saw and the square printed
-    // on it, an 18 x 12 track between them and the thumb at position 0 (saw) or 1 (square).
+    // The 303's waveform (this fork): no slider, the saw and the square side by side on one
+    // black frame as wide as the pitch/clear block under it, each half a click target; the
+    // chosen one (position 0 saw, 1 square) green with a soft glow, the other a dull red.
+    let w = WAVE_W_303;
+    let half = w / 2.0;
     for pos in 0..2 {
-        out.push(Part::new(format!("switch_wave_{pos}"), 40.0, 14.0, |s| {
-            s.rect(0.0, 0.0, 40.0, 14.0, 3.0, pal::BLACK);
-            s.rect(0.6, 0.6, 38.8, 12.8, 2.5, "#26282b");
-            s.rect(11.0, 1.0, 18.0, 12.0, 2.0, "#0e0f10");
-            wave_glyphs(s, 2.0, 30.5, 7.0, pal::INK);
-            let x = 12.0 + pos as f32 * 8.0;
-            s.rect(x, 1.5, 8.0, 11.0, 2.0, "#8c929b");
-            s.rect(x, 1.5, 8.0, 9.5, 2.0, pal::STEEL);
-            s.line(x + 2.0, 6.0, x + 6.0, 6.0, "#00000040", 0.8);
+        out.push(Part::new(format!("switch_wave_{pos}"), w, 14.0, |s| {
+            s.rect(0.0, 0.0, w, 14.0, 3.0, pal::BLACK);
+            s.rect(0.6, 0.6, w - 1.2, 12.8, 2.5, "#26282b");
+            s.line(half, 3.0, half, 11.0, "#0e0f10", 1.0);
+            let (sx, qx) = (half / 2.0 - 3.75, half + half / 2.0 - 3.75);
+            let on = if pos == 0 { (pal::GREEN, WAVE_OFF) } else { (WAVE_OFF, pal::GREEN) };
+            let glow = if pos == 0 { (WAVE_GLOW, "none") } else { ("none", WAVE_GLOW) };
+            wave_glyphs(s, sx, qx, 7.0, glow, 2.8);
+            wave_glyphs(s, sx, qx, 7.0, on, 1.3);
         }));
     }
     switch(out, "switch_808", 11.0, 17.0, false);
@@ -1022,35 +1046,60 @@ pub const FLAGS_303: [f32; 5] = [250.5, 272.5, 294.5, 316.5, 338.5];
 /// The edit step display's left and top, in the flags block's top row (the display and its
 /// arrows are 31 px wide).
 pub const EDIT_303: (f32, f32) = (296.0, 59.0);
-/// The six knobs (30 wide) and the GENERATE pill (22 wide) are spread evenly between the
-/// waveform switch's right edge (55) and the section's right edge (366): one gap of about
-/// 13.5 px before, between and after them.
-/// The first knob's left edge, and the step from one knob to the next.
-pub const KNOB_X0_303: f32 = 68.5;
-pub const KNOB_DX_303: f32 = 43.5;
-/// The center x of the GENERATE pill and its label: one gap after the last knob.
-pub const GENERATE_X_303: f32 = KNOB_X0_303 + 5.0 * KNOB_DX_303 + 30.0 + 14.0 + 11.0;
+/// The five large knobs (CUTOFF to ACCENT): their size (`knob_303`) and top. TUNE is the small
+/// knob under the waveform.
+pub const KNOB_W_303: f32 = 27.0;
+pub const KNOB_Y_303: f32 = 10.0;
+/// The GENERATE label's cap height, and its space from the section's right edge (366).
+const GENERATE_CAP_303: f32 = 3.6;
+const GENERATE_MARGIN_303: f32 = 4.0;
+
+/// The center x of the GENERATE pill and its label: as far right as the label (wider than the
+/// pill) lets it, `GENERATE_MARGIN_303` from the section's right edge.
+pub fn generate_x_303() -> f32 {
+    366.0 - GENERATE_MARGIN_303 - font::text_width(GENERATE_CAP_303, "GENERATE") / 2.0
+}
+
+/// The left edge of large knob `k` (0 CUTOFF to 4 ACCENT): the five are spread with six equal
+/// gaps between the waveform/TUNE column's right edge (46) and the GENERATE label's left edge.
+pub fn knob_x_303(k: usize) -> f32 {
+    let right = generate_x_303() - font::text_width(GENERATE_CAP_303, "GENERATE") / 2.0;
+    let gap = (right - 46.0 - 5.0 * KNOB_W_303) / 6.0;
+    46.0 + gap + (KNOB_W_303 + gap) * k as f32
+}
+/// The small TUNE knob under the waveform (15 px, centered on the column), and its label.
+pub const TUNE_Y_303: f32 = 32.5;
+const TUNE_LABEL_Y_303: f32 = 28.5;
 /// The center x of the pitch mode and clear block.
 pub const LEFT_X_303: f32 = 29.0;
 
-/// The vertical center of the WAVEFORM label: the middle of the paper above the waveform switch
-/// (the section's top at 0, the switch's at 20).
-pub const WAVEFORM_Y_303: f32 = 10.0;
+/// The vertical center of the WAVEFORM label: in the row of the knobs' labels.
+pub const WAVEFORM_Y_303: f32 = 5.5;
+/// The waveform switch: over the pitch/clear block (`BAND_303[0]`), as wide as it, right under
+/// its label.
+pub const WAVE_X_303: f32 = 12.0;
+pub const WAVE_Y_303: f32 = 9.5;
+pub const WAVE_W_303: f32 = 34.0;
+/// The waveform not chosen (a dull red) and the glow under the one chosen.
+const WAVE_OFF: &str = "#8a3a33";
+const WAVE_GLOW: &str = "#53d86a40";
 
 fn tb303_bg(out: &mut Vec<Part>) {
     out.push(Part::new("bg_tb303", 366.0, 115.0, |s| {
         face(s, 366.0, 115.0, pal::PAPER);
         let ink = pal::BLACK;
-        // The waveform switch (40 x 14 at (15, 20)) is labeled in the middle of the paper
-        // above it.
-        label(s, 35.0, WAVEFORM_Y_303, 3.6, ink, "WAVEFORM");
-        for (k, name) in ["TUNE", "CUTOFF", "RESO", "ENV MOD", "DECAY", "ACCENT"]
+        // The waveform switch (over the pitch/clear block) is labeled in the middle of the
+        // paper above it.
+        label(s, WAVE_X_303 + WAVE_W_303 / 2.0, WAVEFORM_Y_303, 3.6, ink, "WAVEFORM");
+        // TUNE: the small knob under the waveform, labeled above it
+        label(s, LEFT_X_303, TUNE_LABEL_Y_303, 3.6, ink, "TUNE");
+        for (k, name) in ["CUTOFF", "RESO", "ENV MOD", "DECAY", "ACCENT"]
             .into_iter()
             .enumerate()
         {
-            label(s, KNOB_X0_303 + 15.0 + KNOB_DX_303 * k as f32, 5.5, 3.6, ink, name);
+            label(s, knob_x_303(k) + KNOB_W_303 / 2.0, 5.5, 3.6, ink, name);
         }
-        label(s, GENERATE_X_303, 5.5, 3.6, ink, "GENERATE");
+        label(s, generate_x_303(), 5.5, GENERATE_CAP_303, ink, "GENERATE");
         // The key band: pitch mode and clear, the keys on gray, the flags.
         for (i, (x, y, w, h)) in BAND_303.into_iter().enumerate() {
             s.rect(x, y, w, h, 4.0, if i == 1 { "#7d8087" } else { pal::BLACK });

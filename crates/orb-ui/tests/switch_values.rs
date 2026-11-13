@@ -126,9 +126,10 @@ fn out_of_range_switch_values_open_play_and_draw() {
         frame(&ctx, &mut app, t, vec![]);
     }
 
-    // a click flips the position shown: 127 (square) goes to 0 (saw)
+    // a click on the saw (the left half; this fork's waveform is two pictures) chooses it:
+    // 127 (shown as the square) goes to 0 (saw)
     let c = controls.iter().find(|c| c.id == "tb303_1.wave").unwrap();
-    let p = Pos2::new(c.x + c.w / 2.0, c.y + c.h / 2.0);
+    let p = Pos2::new(c.x + c.w / 4.0, c.y + c.h / 2.0);
     let button = |pressed| Event::PointerButton {
         pos: p,
         button: PointerButton::Primary,
