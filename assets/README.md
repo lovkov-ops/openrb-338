@@ -8,7 +8,7 @@
 - `readme/`: the README's pictures (CI ignores this folder, `.github/workflows/ci.yml`):
   - `logo.svg`: the README's logo, the OpenRB-338x wordmark: `ui/logo.svg` on the panel's
     slate (#3b4656) with rounded corners.
-  - `screenshot.png`: the README's screenshot of OpenRB-338x on macOS (2026-11-14, `--demo
+  - `screenshot.png`: the README's screenshot of OpenRB-338x on macOS (2026-11-14, step LEDs and LFO row, `--demo
     --size 624x510 --ppp 2`).
 
 ## Standard.rbm
