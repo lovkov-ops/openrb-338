@@ -1,23 +1,41 @@
 <p align="center">
-  <img src="assets/readme/logo.gif" alt="OpenRB-338" width="378">
+  <img src="assets/readme/logo.svg" alt="OpenRB-338x" width="402">
 </p>
 
 <div align="center">
 
-# OpenRB-338
+# OpenRB-338x
 
 </div>
 
 <p align="center">
-  <a href="https://github.com/pingw33n/openrb-338/releases"><b>Download</b></a> ·
+  <a href="https://github.com/lovkov-ops/OpenRB-338x/releases"><b>Download</b></a> ·
   <a href="assets/readme/screenshot.png"><b>Screenshot</b></a> ·
   <a href="https://github.com/pingw33n/rb-songs"><b>Song collection</b></a> ·
   <a href="https://github.com/pingw33n/rb-mods"><b>Mod collection</b></a>
 </p>
 
-OpenRB-338 is a reimplementation of [ReBirth RB-338](https://en.wikipedia.org/wiki/ReBirth_RB-338),
+OpenRB-338x is a reimplementation of [ReBirth RB-338](https://en.wikipedia.org/wiki/ReBirth_RB-338),
 the 1997 software synth of two TB-303 bass lines, a TR-808 and a TR-909, for today's macOS, Linux
 and Windows.
+
+OpenRB-338x is a fork of [OpenRB-338](https://github.com/pingw33n/OpenRB-338) by pingw33n, with
+extra features for the two bass synths. Everything the original does, it does too.
+
+## New in OpenRB-338x
+
+- **GENERATE menu** on each bass synth (the button right of ACCENT):
+  - **SCALE AND KEY:** 37 scales and every key. The keys of the chosen scale glow green, and
+    the second synth is offered only the scales that fit the first one.
+  - **RANDOM:** writes a new pattern in the scale: any of down, up, accent, slide and note
+    (with rests).
+  - **ALTER:** changes the pattern that is there instead of starting over.
+  - **MOVE:** shifts the pattern by -2, -1, a random amount, +1 or +2 steps.
+- **An LFO on CUTOFF, RESO, ENV MOD, DECAY and ACCENT:** RATE and AMOUNT knobs, a sine or a
+  sample-and-hold wave, and Sync to the song's tempo. The knob's arc shows the moving value.
+- **The waveform as two pictures** (saw and square) to click.
+- **`.rbsx` songs:** a ReBirth song plus the GENERATE and LFO settings. Plain `.rbs` songs still
+  open and save as before.
 
 ## Features
 
@@ -47,7 +65,7 @@ and Windows.
 
 ## Not implemented
 
-- MIDI, VST and ReWire. OpenRB-338 is a standalone application only, with no MIDI input or sync.
+- MIDI, VST and ReWire. OpenRB-338x is a standalone application only, with no MIDI input or sync.
 - Mod themes: a mod changes the drum sounds, not the look of the panel.
 - The original's Edit menu functions on patterns (copy, paste, clear, shift, randomize and the
   like), and undo.
@@ -57,33 +75,33 @@ and Windows.
 ## Quick start
 
 1. **Download** the package for your system and CPU from
-   [Releases](https://github.com/pingw33n/openrb-338/releases):
+   [Releases](https://github.com/lovkov-ops/OpenRB-338x/releases):
 
    | System | File |
    |---|---|
-   | macOS, Apple silicon | `OpenRB-338-<version>-aarch64-apple-darwin.dmg` |
-   | macOS, Intel | `OpenRB-338-<version>-x86_64-apple-darwin.dmg` |
-   | Windows, x64 | `OpenRB-338-<version>-x64-setup.exe` |
-   | Windows, ARM64 | `OpenRB-338-<version>-arm64-setup.exe` |
-   | Linux, x86_64 | `OpenRB-338-<version>-x86_64.AppImage` |
-   | Linux, ARM64 | `OpenRB-338-<version>-aarch64.AppImage` |
+   | macOS, Apple silicon | `OpenRB-338x-<version>-aarch64-apple-darwin.dmg` |
+   | macOS, Intel | `OpenRB-338x-<version>-x86_64-apple-darwin.dmg` |
+   | Windows, x64 | `OpenRB-338x-<version>-x64-setup.exe` |
+   | Windows, ARM64 | `OpenRB-338x-<version>-arm64-setup.exe` |
+   | Linux, x86_64 | `OpenRB-338x-<version>-x86_64.AppImage` |
+   | Linux, ARM64 | `OpenRB-338x-<version>-aarch64.AppImage` |
 
    Plain archives (`.tar.gz`, or `.zip` on Windows) with the two binaries are there too.
 
 2. **Install it.**
-   - macOS: open the `.dmg` and drag OpenRB-338 to Applications.
+   - macOS: open the `.dmg` and drag OpenRB-338x to Applications.
    - Windows: run the installer. It can add `orb` to the PATH.
-   - Linux: make the AppImage executable (`chmod +x OpenRB-338-*.AppImage`).
+   - Linux: make the AppImage executable (`chmod +x OpenRB-338x-*.AppImage`).
 
 3. **Optionally, get songs and mods:** download the
    [song collection](https://github.com/pingw33n/rb-songs) and the
    [mod collection](https://github.com/pingw33n/rb-mods), and unpack them anywhere.
 
-4. **Run OpenRB-338.** The binaries are not signed, so the first start needs your permission:
+4. **Run OpenRB-338x.** The binaries are not signed, so the first start needs your permission:
    - **macOS:** the first launch is refused. Open System Settings > Privacy & Security, click
-     "Open Anyway" next to OpenRB-338, and confirm. On macOS 14 and older, right-click the app >
+     "Open Anyway" next to OpenRB-338x, and confirm. On macOS 14 and older, right-click the app >
      Open > Open works too. Or, in Terminal: `xattr -dr com.apple.quarantine
-     /Applications/OpenRB-338.app`.
+     /Applications/OpenRB-338x.app`.
    - **Windows:** SmartScreen says "Windows protected your PC". Click "More info", then
      "Run anyway".
    - **Linux:** nothing more. If the AppImage does not start because FUSE is missing, install
@@ -99,14 +117,14 @@ and Windows.
 
 6. **Play:** press Play, or Space.
 
-## Making mods work in OpenRB-338
+## Making mods work in OpenRB-338x
 
 The mods of the [mod collection](https://github.com/pingw33n/rb-mods) already work: open them
 as they are.
 
 Other mods need one step first. A ReBirth mod's samples are encrypted with a key that ReBirth
 reads from `RB20FUL.DAT`, a file on the ReBirth CD. Instead of making you keep that file around,
-OpenRB-338 carries the small part of the key that mods use, and needs mods re-encrypted with that
+OpenRB-338x carries the small part of the key that mods use, and needs mods re-encrypted with that
 part. `orb mod recrypt` does this:
 
 ```sh
@@ -131,9 +149,9 @@ See [docs/building.md](docs/building.md).
 
 ## License
 
-OpenRB-338 is free software under the [GNU General Public License v3.0](LICENSE) (GPL-3.0-only).
+OpenRB-338x is free software under the [GNU General Public License v3.0](LICENSE) (GPL-3.0-only).
 Copyright (C) 2026 the OpenRB-338 authors.
 
-ReBirth RB-338 is a trademark of Propellerhead Software (now Reason Studios). OpenRB-338 is not
+ReBirth RB-338 is a trademark of Propellerhead Software (now Reason Studios). OpenRB-338x is not
 affiliated with or endorsed by them. The built-in standard kit (`assets/Standard.rbm`) holds
 ReBirth's own drum samples and panel pictures. See [assets/README.md](assets/README.md).
