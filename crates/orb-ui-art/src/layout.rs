@@ -288,8 +288,8 @@ fn tb303(b: &mut Builder, r: usize) {
     // The waveform: the saw and the square on one frame over the pitch/clear block, under the
     // label; a click on either chooses it (orb-ui's App::control).
     b.part("wave", "hswitch", "switch_wave_0", WAVE_X_303, WAVE_Y_303);
-    // TUNE, small, under the waveform in its column; the other five spread along the paper
-    b.knob("tune", KNOB_303_SMALL, LEFT_X_303 - 7.5, TUNE_Y_303, 0.5);
+    // TUNE over the waveform in its column (this fork); the other five spread along the paper
+    b.knob("tune", KNOB_303_SMALL, LEFT_X_303 - 10.0, TUNE_Y_303, 0.5);
     let vals = [0.35, 0.6, 0.45, 0.4, 0.55];
     let half = KNOBS[KNOB_909].w / 2.0;
     for (k, name) in ["cutoff", "reso", "envmod", "decay", "accent"]

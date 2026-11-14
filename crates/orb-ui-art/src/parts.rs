@@ -121,19 +121,19 @@ pub const KNOBS: [KnobDesign; 6] = [
         arc: pal::AMBER,
         track: "#00000040",
     },
-    // The 303's small TUNE knob (this fork), under the waveform: knob_303 at half size.
+    // The 303's small TUNE knob (this fork), over the waveform: knob_303 at 20/27 size.
     KnobDesign {
         name: "knob_303_small",
-        w: 15.0,
-        h: 15.0,
-        cx: 7.5,
-        cy: 7.5,
-        ring_r: 6.8,
-        ring_w: 0.9,
-        body_r: 5.5,
-        ptr0: 1.5,
-        ptr1: 4.8,
-        ptr_w: 1.0,
+        w: 20.0,
+        h: 20.0,
+        cx: 10.0,
+        cy: 10.0,
+        ring_r: 9.07,
+        ring_w: 1.1,
+        body_r: 7.33,
+        ptr0: 2.0,
+        ptr1: 6.4,
+        ptr_w: 1.2,
         body: pal::STEEL,
         pointer: pal::BLACK,
         arc: pal::ORANGE,
@@ -696,7 +696,7 @@ fn small_buttons(out: &mut Vec<Part>) {
             if state == "pressed" {
                 s.rect(0.5, 0.5, w - 1.0, h - 1.0, 2.0, "#00000040");
             }
-            label(s, w / 2.0, h / 2.0, 3.2, pal::BLACK, "RNDM");
+            label(s, w / 2.0, h / 2.0, 4.0, pal::BLACK, "RNDM");
         }));
     }
     for state in ["rest", "pressed"] {
@@ -770,12 +770,13 @@ fn leds(out: &mut Vec<Part>) {
         ("on", pal::RED, Some("#e2413b40")),
         ("sel", pal::GREEN, Some("#53d86a59")),
     ] {
+        // square, with a square glow when lit
         out.push(Part::new(format!("stepled_{state}"), d, d, |s| {
             if let Some(g) = glow {
-                s.circle(d / 2.0, d / 2.0, d / 2.0, g);
+                s.rect(0.0, 0.0, d, d, 1.5, g);
             }
-            s.circle(d / 2.0, d / 2.0, 3.0, color);
-            s.circle_stroke(d / 2.0, d / 2.0, 3.0, "#00000040", 0.5);
+            s.rect(1.0, 1.0, d - 2.0, d - 2.0, 0.8, color);
+            s.rect_stroke(1.0, 1.0, d - 2.0, d - 2.0, 0.8, "#00000040", 0.5);
         }));
     }
     // The 9 LEDs of the compressor's gain-reduction meter.
@@ -1163,26 +1164,24 @@ pub const FLAGS_303: [f32; 5] = [250.5, 272.5, 294.5, 316.5, 338.5];
 /// The EDIT STEP label is over them at the block's top, the RNDM pill right of them.
 pub const STEP_LED_303: f32 = 8.0;
 const STEP_LED_PITCH_303: f32 = 9.0;
+const STEP_LED_X_303: f32 = 246.5;
 const STEP_LED_Y_303: f32 = 63.0;
 const EDIT_LABEL_Y_303: f32 = 59.5;
 
 /// The left and top of step `i`'s LED (0..=15).
 pub fn step_led_303(i: usize) -> (f32, f32) {
     (
-        FLAGS_303[0] + STEP_LED_PITCH_303 * (i % 8) as f32,
+        STEP_LED_X_303 + STEP_LED_PITCH_303 * (i % 8) as f32,
         STEP_LED_Y_303 + STEP_LED_PITCH_303 * (i / 8) as f32,
     )
 }
 
-/// The RNDM pill (this fork: the GENERATE menu's button, moved from the knob row): right of the
-/// step LEDs, its right edge on the NOTE flag's, centered on the two LED rows.
-pub const RNDM_W_303: f32 = 22.0;
-pub const RNDM_H_303: f32 = 10.0;
+/// The RNDM button (this fork: the GENERATE menu's button, moved from the knob row): right of
+/// the step LEDs, 4 px from the block's right edge (354), as high as the two LED rows.
+pub const RNDM_W_303: f32 = 28.0;
+pub const RNDM_H_303: f32 = 17.0;
 pub fn rndm_303() -> (f32, f32) {
-    (
-        FLAGS_303[4] + 9.0 - RNDM_W_303,
-        STEP_LED_Y_303 + (STEP_LED_PITCH_303 + STEP_LED_303 - RNDM_H_303) / 2.0,
-    )
+    (354.0 - 4.0 - RNDM_W_303, STEP_LED_Y_303)
 }
 /// The five large knobs (CUTOFF to ACCENT): their size (`knob_303`) and top. TUNE is the small
 /// knob under the waveform.
@@ -1231,19 +1230,20 @@ pub fn lfo_knobs_303(k: usize) -> ((f32, f32), (f32, f32)) {
     )
 }
 
-/// The small TUNE knob under the waveform (15 px, centered on the column), and its label: the
-/// two together halfway between the waveform (bottom 23.5) and the pitch block (top 56).
-pub const TUNE_Y_303: f32 = 35.0;
-const TUNE_LABEL_Y_303: f32 = 31.0;
+/// The TUNE knob (20 px, centered on the column) under its label in the knobs' label row, at
+/// the large knobs' top; the waveform is under it (this fork swapped the two).
+pub const TUNE_Y_303: f32 = 10.0;
+const TUNE_LABEL_Y_303: f32 = 5.5;
 /// The center x of the pitch mode and clear block.
 pub const LEFT_X_303: f32 = 29.0;
 
-/// The vertical center of the WAVEFORM label: in the row of the knobs' labels.
-pub const WAVEFORM_Y_303: f32 = 5.5;
+/// The vertical center of the WAVEFORM label: under the TUNE knob (bottom 30), the label and
+/// the switch spaced evenly down to the pitch/clear block (top 56).
+pub const WAVEFORM_Y_303: f32 = 34.75;
 /// The waveform switch: over the pitch/clear block (`BAND_303[0]`), as wide as it, right under
 /// its label.
 pub const WAVE_X_303: f32 = 12.0;
-pub const WAVE_Y_303: f32 = 9.5;
+pub const WAVE_Y_303: f32 = 39.25;
 pub const WAVE_W_303: f32 = 34.0;
 /// The waveform not chosen (a dull red) and the glow under the one chosen.
 const WAVE_OFF: &str = "#8a3a33";
@@ -1269,7 +1269,7 @@ fn tb303_bg(out: &mut Vec<Part>) {
             ink,
             "WAVEFORM",
         );
-        // TUNE: the small knob under the waveform, labeled above it
+        // TUNE: the small knob over the waveform, labeled above it
         label(s, LEFT_X_303, TUNE_LABEL_Y_303, 3.6, ink, "TUNE");
         for (k, name) in ["CUTOFF", "RESO", "ENV MOD", "DECAY", "ACCENT"]
             .into_iter()
@@ -1290,10 +1290,15 @@ fn tb303_bg(out: &mut Vec<Part>) {
             s.rect(x, y, w, h, 4.0, if i == 1 { "#7d8087" } else { pal::BLACK });
         }
         // "EDIT STEP" at the flags block's top, over the step LEDs
-        let (x0, _) = step_led_303(0);
-        let (x7, _) = step_led_303(7);
-        let mid = (x0 + x7 + STEP_LED_303) / 2.0;
-        label(s, mid, EDIT_LABEL_Y_303, 3.2, pal::INK, "EDIT STEP");
+        let (bx, _, bw, _) = BAND_303[2];
+        label(
+            s,
+            bx + bw / 2.0,
+            EDIT_LABEL_Y_303,
+            3.2,
+            pal::INK,
+            "EDIT STEP",
+        );
         let ink = pal::INK;
         label(s, LEFT_X_303, PITCH_LABEL_Y_303, 3.2, ink, "PITCH");
         label(s, LEFT_X_303, CLEAR_LABEL_Y_303, 3.2, ink, "CLEAR");

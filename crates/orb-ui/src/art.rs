@@ -110,12 +110,12 @@ pub const KNOBS: [KnobDesign; 6] = [
     // the 303's small TUNE knob (this fork)
     KnobDesign {
         name: "knob_303_small",
-        w: 15.0,
-        h: 15.0,
-        cx: 7.5,
-        cy: 7.5,
-        ring_r: 6.8,
-        ring_w: 0.9,
+        w: 20.0,
+        h: 20.0,
+        cx: 10.0,
+        cy: 10.0,
+        ring_r: 9.07,
+        ring_w: 1.1,
         arc: [0xf0, 0x8a, 0x24],
     },
 ];
