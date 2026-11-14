@@ -753,9 +753,9 @@ fn the_303_step_editor_edits_the_pattern_as_the_original() {
         ]
         .map(|d| dev(Device::Tb303_1, 45, &d))
     );
-    // Step moves the edit step (nothing is sent); pitch mode on goes back to step 1 and a key
-    // there advances
-    h.click("tb303_1.step");
+    // A step LED (this fork, instead of Step) chooses the edit step (nothing is sent); pitch
+    // mode on goes back to step 1 and a key there advances
+    h.click("tb303_1.stepled2");
     assert_eq!(h.app.panel.display("tb303_1.edit_step"), Some(2));
     h.click_at(Harness::center("tb303_1.pitch_button"));
     assert_eq!(h.app.panel.display("tb303_1.edit_step"), Some(1));

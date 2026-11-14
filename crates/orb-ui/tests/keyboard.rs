@@ -230,13 +230,15 @@ fn the_303_keys_edit_the_edit_step() {
             step303(0, 0, 0, 5, 0),
         ]
     );
-    // Enter is Step, Backspace is Back (a 303 has the focus)
-    h.key(Key::Enter);
-    h.key(Key::Enter);
-    assert_eq!(h.app.panel.display("tb303_1.edit_step"), Some(3));
+    // (this fork) Backspace does nothing on a 303 and Enter is Play: the step LEDs choose the
+    // edit step
     h.key(Key::Backspace);
-    assert_eq!(h.app.panel.display("tb303_1.edit_step"), Some(2));
-    assert!(!h.app.panel.transport.playing, "Enter is not Play here");
+    assert_eq!(h.app.panel.display("tb303_1.edit_step"), Some(1));
+    h.key(Key::Enter);
+    assert_eq!(h.app.panel.display("tb303_1.edit_step"), Some(1));
+    assert!(h.app.panel.transport.playing, "Enter is Play");
+    h.key(Key::Enter);
+    h.events();
     // the second 303 gets the keys when it has the focus
     h.focus(1);
     h.key(Key::M);

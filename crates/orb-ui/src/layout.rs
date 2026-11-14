@@ -119,7 +119,9 @@ mod tests {
     #[test]
     fn layout_has_every_control() {
         let c = controls();
-        assert_eq!(c.len(), 380);
+        // (this fork: 16 step LEDs replace the edit step display and its two arrows on each
+        // 303, 380 + 2 * 13)
+        assert_eq!(c.len(), 406);
         assert!(c.iter().all(|c| c.w > 0.0 && c.h > 0.0));
         let play = c.iter().find(|c| c.id == "transport.play").unwrap();
         assert_eq!((play.x, play.y, play.w, play.h), (112.0, 21.0, 32.0, 25.0));

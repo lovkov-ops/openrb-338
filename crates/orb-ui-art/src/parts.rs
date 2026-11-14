@@ -688,6 +688,17 @@ fn small_buttons(out: &mut Vec<Part>) {
             ));
         }
     }
+    // The 303's RNDM pill (this fork): the GENERATE menu's button, its name on it.
+    for state in ["rest", "pressed"] {
+        let (w, h) = (RNDM_W_303, RNDM_H_303);
+        out.push(Part::new(format!("btn_rndm_{state}"), w, h, |s| {
+            key_3d(s, 0.5, 0.0, w - 1.0, h, 2.0, "#a4aab2", pal::STEEL);
+            if state == "pressed" {
+                s.rect(0.5, 0.5, w - 1.0, h - 1.0, 2.0, "#00000040");
+            }
+            label(s, w / 2.0, h / 2.0, 3.2, pal::BLACK, "RNDM");
+        }));
+    }
     for state in ["rest", "pressed"] {
         // The 303's edit step arrows (Step up, Back down), in the paper's colors.
         for (name, up) in [("inc", true), ("dec", false)] {
@@ -749,6 +760,22 @@ fn leds(out: &mut Vec<Part>) {
             }
             s.circle(4.0, 4.0, 3.0, color);
             s.circle_stroke(4.0, 4.0, 3.0, "#00000040", 0.5);
+        }));
+    }
+    // The 303's step LEDs (this fork): lit red for a step of the pattern's length, off past it
+    // (as `led_8_off`), green for the edit step.
+    let d = STEP_LED_303;
+    for (state, color, glow) in [
+        ("off", "#4a2a28", None),
+        ("on", pal::RED, Some("#e2413b40")),
+        ("sel", pal::GREEN, Some("#53d86a59")),
+    ] {
+        out.push(Part::new(format!("stepled_{state}"), d, d, |s| {
+            if let Some(g) = glow {
+                s.circle(d / 2.0, d / 2.0, d / 2.0, g);
+            }
+            s.circle(d / 2.0, d / 2.0, 3.0, color);
+            s.circle_stroke(d / 2.0, d / 2.0, 3.0, "#00000040", 0.5);
         }));
     }
     // The 9 LEDs of the compressor's gain-reduction meter.
@@ -1131,25 +1158,39 @@ const CLEAR_LABEL_Y_303: f32 = 91.5;
 /// the flags 22 px apart.
 pub const WHITE_303: [f32; 8] = [66.0, 87.0, 108.0, 129.0, 150.0, 171.0, 192.0, 213.0];
 pub const FLAGS_303: [f32; 5] = [250.5, 272.5, 294.5, 316.5, 338.5];
-/// The edit step display's left and top, in the flags block's top row (the display and its
-/// arrows are 31 px wide).
-pub const EDIT_303: (f32, f32) = (296.0, 59.0);
+/// The step LEDs (this fork, instead of the edit step display): 2 rows of 8 in the flags
+/// block's top part, steps 1-8 above 9-16, left-aligned with the flags; their size and pitch.
+/// The EDIT STEP label is over them at the block's top, the RNDM pill right of them.
+pub const STEP_LED_303: f32 = 8.0;
+const STEP_LED_PITCH_303: f32 = 9.0;
+const STEP_LED_Y_303: f32 = 63.0;
+const EDIT_LABEL_Y_303: f32 = 59.5;
+
+/// The left and top of step `i`'s LED (0..=15).
+pub fn step_led_303(i: usize) -> (f32, f32) {
+    (
+        FLAGS_303[0] + STEP_LED_PITCH_303 * (i % 8) as f32,
+        STEP_LED_Y_303 + STEP_LED_PITCH_303 * (i / 8) as f32,
+    )
+}
+
+/// The RNDM pill (this fork: the GENERATE menu's button, moved from the knob row): right of the
+/// step LEDs, its right edge on the NOTE flag's, centered on the two LED rows.
+pub const RNDM_W_303: f32 = 22.0;
+pub const RNDM_H_303: f32 = 10.0;
+pub fn rndm_303() -> (f32, f32) {
+    (
+        FLAGS_303[4] + 9.0 - RNDM_W_303,
+        STEP_LED_Y_303 + (STEP_LED_PITCH_303 + STEP_LED_303 - RNDM_H_303) / 2.0,
+    )
+}
 /// The five large knobs (CUTOFF to ACCENT): their size (`knob_303`) and top. TUNE is the small
 /// knob under the waveform.
 pub const KNOB_W_303: f32 = 27.0;
 pub const KNOB_Y_303: f32 = 10.0;
-/// The GENERATE label's cap height, and its space from the section's right edge (366).
-const GENERATE_CAP_303: f32 = 3.6;
-const GENERATE_MARGIN_303: f32 = 4.0;
-
-/// The GENERATE pill's top: just under its label.
-pub const GENERATE_Y_303: f32 = 9.5;
-
-/// The center x of the GENERATE pill and its label: as far right as the label (wider than the
-/// pill) lets it, `GENERATE_MARGIN_303` from the section's right edge.
-pub fn generate_x_303() -> f32 {
-    366.0 - GENERATE_MARGIN_303 - font::text_width(GENERATE_CAP_303, "GENERATE") / 2.0
-}
+/// The space left of the first large knob's group (from the waveform/TUNE column) and right of
+/// the last one (to the section's right edge).
+const KNOB_MARGIN_303: f32 = 3.0;
 
 /// How far a large knob's group reaches from its center: left to the start of its RATE label,
 /// right to the end of its AMOUNT label.
@@ -1163,12 +1204,12 @@ fn lfo_reach_303() -> (f32, f32) {
 }
 
 /// The left edge of large knob `k` (0 CUTOFF to 4 ACCENT): the five knobs with their LFOs are
-/// spread evenly from the waveform/TUNE column (46; the first RATE label 2 px after it) to the
-/// section's right edge (366; the last AMOUNT label 4 px before it, under GENERATE).
+/// spread evenly from the waveform/TUNE column (46) to the section's right edge (366), the
+/// same space before the first RATE label and after the last AMOUNT label.
 pub fn knob_x_303(k: usize) -> f32 {
     let (left, right) = lfo_reach_303();
-    let first = 46.0 + 2.0 + left;
-    let last = 366.0 - GENERATE_MARGIN_303 - right;
+    let first = 46.0 + KNOB_MARGIN_303 + left;
+    let last = 366.0 - KNOB_MARGIN_303 - right;
     first + (last - first) * k as f32 / 4.0 - KNOB_W_303 / 2.0
 }
 /// The LFO knobs of each large knob (the 909's small knob): their centers' offsets from the
@@ -1190,9 +1231,10 @@ pub fn lfo_knobs_303(k: usize) -> ((f32, f32), (f32, f32)) {
     )
 }
 
-/// The small TUNE knob under the waveform (15 px, centered on the column), and its label.
-pub const TUNE_Y_303: f32 = 32.5;
-const TUNE_LABEL_Y_303: f32 = 28.5;
+/// The small TUNE knob under the waveform (15 px, centered on the column), and its label: the
+/// two together halfway between the waveform (bottom 23.5) and the pitch block (top 56).
+pub const TUNE_Y_303: f32 = 35.0;
+const TUNE_LABEL_Y_303: f32 = 31.0;
 /// The center x of the pitch mode and clear block.
 pub const LEFT_X_303: f32 = 29.0;
 
@@ -1235,7 +1277,6 @@ fn tb303_bg(out: &mut Vec<Part>) {
         {
             label(s, knob_x_303(k) + KNOB_W_303 / 2.0, 5.5, 3.6, ink, name);
         }
-        label(s, generate_x_303(), 5.5, GENERATE_CAP_303, ink, "GENERATE");
         // each large knob's LFO knobs: RATE left of the upper one, AMOUNT right of the lower
         let half = KNOBS[3].w / 2.0; // the 909's small knob (KNOBS[3])
         let cap = LFO_LABEL_CAP_303;
@@ -1248,10 +1289,11 @@ fn tb303_bg(out: &mut Vec<Part>) {
         for (i, (x, y, w, h)) in BAND_303.into_iter().enumerate() {
             s.rect(x, y, w, h, 4.0, if i == 1 { "#7d8087" } else { pal::BLACK });
         }
-        let (ex, ey) = EDIT_303;
-        // the display is the flags block's top row, "EDIT STEP" left of it
-        label(s, 279.5, ey + 8.0, 3.2, pal::INK, "EDIT STEP");
-        well(s, ex, ey, 19.0, 16.0);
+        // "EDIT STEP" at the flags block's top, over the step LEDs
+        let (x0, _) = step_led_303(0);
+        let (x7, _) = step_led_303(7);
+        let mid = (x0 + x7 + STEP_LED_303) / 2.0;
+        label(s, mid, EDIT_LABEL_Y_303, 3.2, pal::INK, "EDIT STEP");
         let ink = pal::INK;
         label(s, LEFT_X_303, PITCH_LABEL_Y_303, 3.2, ink, "PITCH");
         label(s, LEFT_X_303, CLEAR_LABEL_Y_303, 3.2, ink, "CLEAR");

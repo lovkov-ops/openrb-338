@@ -889,6 +889,26 @@ impl App {
             }
             "lfoknob" => self.knob(ui, view, c, rect),
             "lfomode" => self.lfo_mode_control(ui, c, rect),
+            // the 303's step LEDs (this fork): a click chooses the edit step
+            "stepled" => {
+                let r = self.hit(ui, c, rect);
+                if self.first_press(ui, c, &r)
+                    && let (Some(k), Some(i)) = (
+                        c.section
+                            .strip_prefix("tb303_")
+                            .and_then(|n| n.parse::<usize>().ok()),
+                        c.name()
+                            .strip_prefix("stepled")
+                            .and_then(|n| n.parse::<usize>().ok()),
+                    )
+                    && (1..=2).contains(&k)
+                    && (1..=16).contains(&i)
+                {
+                    self.panel.choose_edit_step(k - 1, i - 1);
+                }
+                let name = self.panel.part_name(c, false, now);
+                paint_part(ui, &name, rect);
+            }
             "fader" => self.fader(ui, view, c, rect),
             "display" => {
                 let n = (c.w / 9.0) as usize;

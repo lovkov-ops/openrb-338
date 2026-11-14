@@ -376,11 +376,12 @@ pub fn groups(is_mac: bool) -> Vec<Group> {
             note: "egui cannot tell the numpad from the main keyboard, so these keys are \
                    resolved by the mode and the focus.",
             rows: vec![
+                // (this fork: the 303's Step and Back keys are gone with the edit step
+                // display, so Enter is Play everywhere)
                 row(
                     "Enter",
-                    "Play (in Program Synth mode only with a drum machine focused: with a \
-                     303 focused it is Step)",
-                    vec![bind(Key::Enter, Scope::NotSynth303, id("transport.play"))],
+                    "Play",
+                    vec![bind(Key::Enter, Scope::Always, id("transport.play"))],
                 ),
                 row(
                     "/",
@@ -438,16 +439,6 @@ pub fn groups(is_mac: bool) -> Vec<Group> {
                     "C F V G B N J M K , L . /",
                     "Piano keys C, C#, D, D#, E, F, F#, G, G#, A, A#, B, high C",
                     pitch,
-                ),
-                row(
-                    "Enter",
-                    "Step",
-                    vec![bind(Key::Enter, s303, id("tb303_{r}.step"))],
-                ),
-                row(
-                    "Backspace",
-                    "Back",
-                    vec![bind(Key::Backspace, s303, id("tb303_{r}.back"))],
                 ),
                 row(
                     "P",

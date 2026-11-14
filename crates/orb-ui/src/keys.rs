@@ -127,7 +127,8 @@ pub fn position(key: Key, physical: Option<Key>) -> Key {
 /// A key the original keeps on two codes (the numpad's and the main keyboard's) is resolved:
 /// - digits `1`..`8` select patterns in [`KeyMode::Patterns`] (and then `4 5 7 8 1 2` are no
 ///   transport keys); in [`KeyMode::Synth`] all digits are the numpad's;
-/// - Enter is the 303's Step when a 303 has the focus in Synth mode, else Play;
+/// - Enter is Play (this fork: the 303's Step and Back keys are gone with the edit step display;
+///   the step LEDs choose the edit step);
 /// - `/` is the 303's high C there, else the loop switch;
 /// - `-` is Note/Pause (303) or AC (drums) in Synth mode, else tempo down.
 ///
@@ -155,8 +156,6 @@ pub fn map(k: Key, shift: bool, mode: KeyMode, focus: usize) -> Option<Action> {
                 return press(&format!("{row}.key{n}"));
             }
             let name = match k {
-                Key::Enter => "step",
-                Key::Backspace => "back",
                 Key::P => "accent",
                 Key::OpenBracket => "slide",
                 Key::Semicolon => "down",

@@ -971,6 +971,11 @@ impl Panel {
         self.set_event("transport.position", position);
     }
 
+    /// A click on 303 `k`'s step LED `i` (0..=15, this fork): that step becomes the edit step.
+    pub fn choose_edit_step(&mut self, k: usize, i: usize) {
+        self.synth[k].edit = i.min(15) as u8;
+    }
+
     /// The 16 steps of 303 `k`'s selected pattern (the GENERATE menu's RANDOM, generate.rs).
     pub fn pattern_303(&self, k: usize) -> [Step303; 16] {
         self.synth[k].patterns[self.rows[k].pattern as usize]
@@ -1101,6 +1106,24 @@ impl Panel {
                 }
             }
             "steps" => self.step_part(c),
+            // the 303's step LEDs (this fork): green the edit step, red a step of the selected
+            // pattern's length, off past it
+            "stepled" => {
+                let k = index_of(sec, "tb303_").unwrap_or(0).min(1);
+                let i: usize = name
+                    .strip_prefix("stepled")
+                    .and_then(|n| n.parse().ok())
+                    .unwrap_or(1);
+                let row = &self.rows[k];
+                let state = if self.synth[k].edit as usize == i - 1 {
+                    "sel"
+                } else if i <= row.len[row.pattern as usize] as usize {
+                    "on"
+                } else {
+                    "off"
+                };
+                format!("{fam}{state}")
+            }
             "meter" if name.starts_with("gr") => {
                 let i: usize = name[2..].parse().unwrap_or(1);
                 let s = ["off", "green", "amber", "red"][self.gr_leds[i - 1].min(3) as usize];
@@ -1183,6 +1206,45 @@ impl Panel {
 mod tests {
     use super::*;
     use crate::behavior::Mods;
+
+    /// (this fork) The 303's step LEDs: green the edit step, red the steps of the pattern's
+    /// length, off past it; a click chooses the edit step.
+    #[test]
+    fn step_leds_show_the_edit_step_and_the_length() {
+        let led = |i: usize| crate::layout::Ctl {
+            id: format!("tb303_1.stepled{i}"),
+            section: "tb303_1".into(),
+            kind: "stepled".into(),
+            part: "stepled_on".into(),
+            x: 0.0,
+            y: 0.0,
+            w: 8.0,
+            h: 8.0,
+        };
+        let mut p = Panel::new();
+        let states = |p: &Panel| -> String {
+            (1..=16)
+                .map(|i| match p.part_name(&led(i), false, 0.0).as_str() {
+                    "stepled_sel" => 'S',
+                    "stepled_on" => 'o',
+                    _ => '.',
+                })
+                .collect()
+        };
+        assert_eq!(states(&p), "Sooooooooooooooo");
+        p.choose_edit_step(0, 4);
+        p.arrow("pattern1.steps_down");
+        p.arrow("pattern1.steps_down");
+        assert_eq!(states(&p), "ooooSooooooooo..");
+        // past the length the edit step can still be chosen
+        p.choose_edit_step(0, 15);
+        assert_eq!(states(&p), "oooooooooooooo.S");
+        assert_eq!(p.display("tb303_1.edit_step"), Some(16));
+        // the second 303 and the other patterns keep their own
+        assert_eq!(p.synth[1].edit, 0);
+        p.press("pattern1.pattern2", 0.0);
+        assert_eq!(states(&p), "oooooooooooooooS");
+    }
 
     #[test]
     fn tempo_clamps_and_steps_by_one_bpm() {
