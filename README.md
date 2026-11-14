@@ -35,7 +35,11 @@ extra features for the two bass synths. Everything the original does, it does to
   sample-and-hold wave, and Sync to the song's tempo. The knob's arc shows the moving value.
 - **The waveform as two pictures** (saw and square) to click.
 - **`.rbsx` songs:** a ReBirth song plus the GENERATE and LFO settings. Plain `.rbs` songs still
-  open and save as before.
+  open and save as before; Save As has a button for each format.
+- **Copy, Cut and Paste of a pattern:** Cmd+C, Cmd+X and Cmd+V on macOS (Ctrl on Windows and
+  Linux) work on the selected pattern of the row with the focus, with its steps, length and
+  shuffle. The Edit menu and a right click on the lit pattern button have them too. A 303's
+  pattern pastes into either 303.
 
 ## Features
 
@@ -67,8 +71,7 @@ extra features for the two bass synths. Everything the original does, it does to
 
 - MIDI, VST and ReWire. OpenRB-338x is a standalone application only, with no MIDI input or sync.
 - Mod themes: a mod changes the drum sounds, not the look of the panel.
-- The original's Edit menu functions on patterns (copy, paste, clear, shift, randomize and the
-  like), and undo.
+- The original's other Edit menu functions on patterns (clear, shift and the like), and undo.
 - The original's preferences and its Windows menu.
 - Export to AIFF (use WAV, FLAC or Ogg).
 
