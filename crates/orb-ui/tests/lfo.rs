@@ -98,7 +98,14 @@ impl Harness {
     /// started.
     fn sent(&mut self, k: usize, param: usize) -> Vec<u8> {
         let (d, ctrl) = link::controls()[&lfo::ids(k, param)[0]];
-        let log = self.app.link.as_mut().unwrap().log.take().unwrap_or_default();
+        let log = self
+            .app
+            .link
+            .as_mut()
+            .unwrap()
+            .log
+            .take()
+            .unwrap_or_default();
         self.start_log();
         log.into_iter()
             .filter_map(|m| match m {
@@ -212,7 +219,10 @@ fn the_lfo_moves_the_engines_cutoff_while_the_knob_keeps_the_users_value() {
 fn the_mode_buttons_take_a_click_on_each_third() {
     let mut h = Harness::new();
     let id = &lfo::ids(1, 0)[3];
-    let c = layout::controls().into_iter().find(|c| &c.id == id).unwrap();
+    let c = layout::controls()
+        .into_iter()
+        .find(|c| &c.id == id)
+        .unwrap();
     let at = |third: f32| Pos2::new(c.x + c.w * (third + 0.5) / 3.0, c.y + c.h / 2.0);
     assert_eq!(h.app.lfo_mode(1, 0), lfo::Mode::default());
     // S: tempo sync on, then off again
@@ -286,7 +296,10 @@ fn each_knobs_lfo_moves_only_its_own_knob() {
     h.set(&rate, 127);
     h.set(&amount, 20);
     // sample & hold, by a click on its third of DECAY's buttons
-    let c = layout::controls().into_iter().find(|c| c.id == mode).unwrap();
+    let c = layout::controls()
+        .into_iter()
+        .find(|c| c.id == mode)
+        .unwrap();
     h.click_at(Pos2::new(c.x + c.w * 2.5 / 3.0, c.y + c.h / 2.0));
     assert_eq!(h.app.lfo_mode(1, decay).shape, Shape::SampleHold);
     assert_eq!(h.app.lfo_mode(1, 0).shape, Shape::Sine);
@@ -294,7 +307,10 @@ fn each_knobs_lfo_moves_only_its_own_knob() {
     h.calls(80);
     let sent = h.sent(1, decay);
     assert!(sent.len() > 10, "{sent:?}");
-    assert!(sent.iter().all(|v| v.abs_diff(base) <= 20), "{sent:?} around {base}");
+    assert!(
+        sent.iter().all(|v| v.abs_diff(base) <= 20),
+        "{sent:?} around {base}"
+    );
     assert_eq!(h.app.panel.value(&knob), Some(base));
     // no other knob of either synth was moved
     for k in 0..2 {

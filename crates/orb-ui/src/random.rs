@@ -30,7 +30,11 @@ pub struct Rng(u64);
 impl Rng {
     /// A generator from `seed` (any value; 0 is replaced).
     pub fn new(seed: u64) -> Self {
-        Self(if seed == 0 { 0x9e37_79b9_7f4a_7c15 } else { seed })
+        Self(if seed == 0 {
+            0x9e37_79b9_7f4a_7c15
+        } else {
+            seed
+        })
     }
 
     /// A generator seeded from the clock.
@@ -71,7 +75,11 @@ impl Rng {
 /// except that setting UP clears DOWN on its step and setting DOWN clears UP.
 pub fn randomize(steps: &mut [Step303; 16], on: [bool; 5], mask: Option<u16>, rng: &mut Rng) {
     let notes: Vec<u8> = mask
-        .map(|m| (0..=12u8).filter(|&n| scale::key_in(m, n as usize)).collect())
+        .map(|m| {
+            (0..=12u8)
+                .filter(|&n| scale::key_in(m, n as usize))
+                .collect()
+        })
         .unwrap_or_default();
     for st in steps.iter_mut() {
         match (on[DOWN], on[UP]) {
@@ -206,9 +214,18 @@ mod tests {
         let mut notes = 0;
         for _ in 0..100 {
             let mut p = full();
-            randomize(&mut p, [false, false, false, false, true], Some(c_major()), &mut rng);
+            randomize(
+                &mut p,
+                [false, false, false, false, true],
+                Some(c_major()),
+                &mut rng,
+            );
             for st in p {
-                assert!(scale::key_in(c_major(), st.note as usize), "note {}", st.note);
+                assert!(
+                    scale::key_in(c_major(), st.note as usize),
+                    "note {}",
+                    st.note
+                );
                 assert!(st.note <= 12);
                 notes += !st.rest as usize;
                 // the flags stay as they were
@@ -222,7 +239,12 @@ mod tests {
     #[test]
     fn note_needs_a_scale() {
         let mut p = full();
-        randomize(&mut p, [false, false, false, false, true], None, &mut Rng::new(1));
+        randomize(
+            &mut p,
+            [false, false, false, false, true],
+            None,
+            &mut Rng::new(1),
+        );
         assert_eq!(p, full());
     }
 
@@ -257,7 +279,10 @@ mod tests {
         let mut p = full();
         randomize(&mut p, [false, false, true, true, false], None, &mut rng);
         assert!(p.iter().any(|st| !st.accent) && p.iter().any(|st| !st.slide));
-        assert!(p.iter().all(|st| st.note == 1 && st.up && !st.down && !st.rest));
+        assert!(
+            p.iter()
+                .all(|st| st.note == 1 && st.up && !st.down && !st.rest)
+        );
     }
 
     /// A pattern whose every step has its own note value (i, so a moved note is easy to see;
@@ -311,7 +336,10 @@ mod tests {
     #[test]
     fn alter_never_puts_up_and_down_on_one_step() {
         let mut rng = Rng::new(8);
-        for on in [[true, false, false, false, false], [false, true, false, false, false]] {
+        for on in [
+            [true, false, false, false, false],
+            [false, true, false, false, false],
+        ] {
             for _ in 0..50 {
                 let mut p = varied();
                 alter(&mut p, on, &mut rng);
@@ -350,7 +378,10 @@ mod tests {
             let o = move_offset(MOVE_RANDOM, &mut rng);
             assert!((1..=15).contains(&o), "{o}");
         }
-        let fixed: Vec<i32> = [0, 1, 3, 4].iter().map(|&c| move_offset(c, &mut rng)).collect();
+        let fixed: Vec<i32> = [0, 1, 3, 4]
+            .iter()
+            .map(|&c| move_offset(c, &mut rng))
+            .collect();
         assert_eq!(fixed, [-2, -1, 1, 2]);
     }
 }

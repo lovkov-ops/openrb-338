@@ -93,7 +93,8 @@ impl Harness {
         self.app.set_random_seed(3);
         self.app.press_op(0, Op::Random);
         self.app.press_op_param(0, Op::Random, orb_ui::random::NOTE);
-        self.app.press_op_param(0, Op::Random, orb_ui::random::ACCENT);
+        self.app
+            .press_op_param(0, Op::Random, orb_ui::random::ACCENT);
         self.app.press_op(0, Op::Random);
         self.app.press_op(0, Op::Move);
         self.app.press_op_param(0, Op::Move, 3);
@@ -110,7 +111,10 @@ fn an_rbsx_keeps_the_generate_settings_and_its_song() {
     let dir = tempfile::tempdir().unwrap();
     let mut h = Harness::new();
     h.open(&song());
-    assert!(h.app.gen_state().is_empty(), "an .rbs opens with an empty menu");
+    assert!(
+        h.app.gen_state().is_empty(),
+        "an .rbs opens with an empty menu"
+    );
     h.set_up_generate();
     let kept = h.app.gen_state();
     assert!(!kept.is_empty());
@@ -204,8 +208,15 @@ fn every_shipped_rbs_song_still_opens_with_an_empty_menu() {
         if p.extension().and_then(|x| x.to_str()) == Some("rbs") {
             // (a song on a mod we do not have plays the built-in kit and says so: not our test)
             h.app.open_song(&p);
-            h.app.errors.retain(|e| !e.contains("was not found in the Mods folder"));
-            assert!(h.app.errors.is_empty(), "{}: {:?}", p.display(), h.app.errors);
+            h.app
+                .errors
+                .retain(|e| !e.contains("was not found in the Mods folder"));
+            assert!(
+                h.app.errors.is_empty(),
+                "{}: {:?}",
+                p.display(),
+                h.app.errors
+            );
             h.calls(2);
             assert_eq!(h.app.doc.path.as_deref(), Some(p.as_path()));
             assert_eq!(h.app.gen_state(), GenState::default(), "{}", p.display());

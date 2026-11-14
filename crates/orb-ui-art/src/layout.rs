@@ -7,10 +7,10 @@
 use std::collections::HashMap;
 
 use crate::parts::{
-    CLEAR_Y_303, EDIT_303, FLAGS_303, GENERATE_Y_303, KEY_ROWS_303, KNOBS, KNOBS_909, KNOB_SWEEP,
-    KNOB_W_303, KNOB_Y_303, LEFT_X_303, LFO_MODE_W, LOGO_X, LOGO_Y, MOD_VIEW_808, PITCH_LED_Y_303,
-    PITCH_Y_303, STEPS_Y_909, TUNE_Y_303, WAVE_X_303, WAVE_Y_303, WHITE_303, column_909,
-    generate_x_303, knob_x_303, knob_y_909, lfo_knobs_303,
+    CLEAR_Y_303, EDIT_303, FLAGS_303, GENERATE_Y_303, KEY_ROWS_303, KNOB_SWEEP, KNOB_W_303,
+    KNOB_Y_303, KNOBS, KNOBS_909, LEFT_X_303, LFO_MODE_W, LOGO_X, LOGO_Y, MOD_VIEW_808,
+    PITCH_LED_Y_303, PITCH_Y_303, STEPS_Y_909, TUNE_Y_303, WAVE_X_303, WAVE_Y_303, WHITE_303,
+    column_909, generate_x_303, knob_x_303, knob_y_909, lfo_knobs_303,
 };
 use crate::svg::{Part, Svg, arc_path, n, pal};
 
@@ -303,7 +303,14 @@ fn tb303(b: &mut Builder, r: usize) {
         let ((rx, ry), (ax, ay)) = lfo_knobs_303(k);
         let lfo = format!("{name}_lfo");
         b.knob_of("lfoknob", &lfo, KNOB_909, rx - half, ry - half, 0.5);
-        b.knob_of("lfoknob", &format!("{name}_amt"), KNOB_909, ax - half, ay - half, 0.0);
+        b.knob_of(
+            "lfoknob",
+            &format!("{name}_amt"),
+            KNOB_909,
+            ax - half,
+            ay - half,
+            0.0,
+        );
         b.part(
             &format!("{name}_lfo_mode"),
             "lfomode",
@@ -325,7 +332,13 @@ fn tb303(b: &mut Builder, r: usize) {
     b.part("step", "trigger", "arrow303_inc_rest", ex + 20.0, ey - 1.0);
     b.part("back", "trigger", "arrow303_dec_rest", ex + 20.0, ey + 8.0);
     // Pitch mode and clear, centered in the band's left block (x 12..46).
-    b.part("pitch_led", "led", "led_8_off", LEFT_X_303 - 4.0, PITCH_LED_Y_303);
+    b.part(
+        "pitch_led",
+        "led",
+        "led_8_off",
+        LEFT_X_303 - 4.0,
+        PITCH_LED_Y_303,
+    );
     b.part(
         "pitch_button",
         "trigger",
@@ -346,7 +359,13 @@ fn tb303(b: &mut Builder, r: usize) {
     let black_notes = [(0, 1), (1, 3), (3, 6), (4, 8), (5, 10)];
     let note_lit = 0; // C
     for (x, note) in WHITE_303.into_iter().zip(white_notes) {
-        b.part(&format!("key{note}"), "trigger", "key_white_rest", x, white_y);
+        b.part(
+            &format!("key{note}"),
+            "trigger",
+            "key_white_rest",
+            x,
+            white_y,
+        );
         let led = if note == note_lit {
             "led_8_on"
         } else {
@@ -356,8 +375,20 @@ fn tb303(b: &mut Builder, r: usize) {
     }
     for (i, note) in black_notes {
         let x = WHITE_303[i] + 11.0;
-        b.part(&format!("key{note}"), "trigger", "key_black_rest", x, black_y);
-        b.part(&format!("key{note}_led"), "led", "led_8_off", x, black_led_y);
+        b.part(
+            &format!("key{note}"),
+            "trigger",
+            "key_black_rest",
+            x,
+            black_y,
+        );
+        b.part(
+            &format!("key{note}_led"),
+            "led",
+            "led_8_off",
+            x,
+            black_led_y,
+        );
     }
     // The flags and note/rest (its LED lit = note) in one row, LEDs like the keys'.
     for (x, (name, led, lit)) in FLAGS_303.into_iter().zip([

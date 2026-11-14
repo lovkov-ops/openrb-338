@@ -27,8 +27,8 @@
 //! 15 steps; `random::rotate`).
 
 use eframe::egui::{
-    self, Align2, Color32, CornerRadius, FontId, Key, Modifiers, PointerButton, Pos2, Rect,
-    Sense, Stroke, Ui, Vec2,
+    self, Align2, Color32, CornerRadius, FontId, Key, Modifiers, PointerButton, Pos2, Rect, Sense,
+    Stroke, Ui, Vec2,
 };
 
 use crate::app::{App, View};
@@ -119,7 +119,10 @@ pub fn glows(sk: &ScaleKeys, id: &str) -> bool {
         "tb303_2" => 1,
         _ => return false,
     };
-    let Some(n) = name.strip_prefix("key").and_then(|n| n.parse::<usize>().ok()) else {
+    let Some(n) = name
+        .strip_prefix("key")
+        .and_then(|n| n.parse::<usize>().ok())
+    else {
         return false;
     };
     sk.get(synth).mask().is_some_and(|m| scale::key_in(m, n))
@@ -319,7 +322,10 @@ impl App {
     /// is open. A field with nothing to offer (BAZE 2 before BAZE 1, a key before a scale) does
     /// nothing.
     pub fn press_field(&mut self, synth: usize, field: Field) {
-        if self.generate_list.is_some_and(|l| l.synth == synth && l.field == field) {
+        if self
+            .generate_list
+            .is_some_and(|l| l.synth == synth && l.field == field)
+        {
             self.generate_list = None;
             return;
         }
@@ -399,8 +405,8 @@ impl App {
         let item_h = CELL_H * view.scale;
         let slider_w = SLIDER_W * view.scale;
         // RANDOM's, ALTER's and MOVE's names and buttons, indexed by `Op`
-        let op_labels: [Rect; 3] = Op::ALL
-            .map(|op| screen(self.op_label_rect(k, op)).unwrap_or(Rect::NOTHING));
+        let op_labels: [Rect; 3] =
+            Op::ALL.map(|op| screen(self.op_label_rect(k, op)).unwrap_or(Rect::NOTHING));
         let op_buttons: [[Rect; 5]; 3] = Op::ALL.map(|op| {
             std::array::from_fn(|i| screen(self.op_button_rect(k, op, i)).unwrap_or(Rect::NOTHING))
         });
@@ -418,7 +424,9 @@ impl App {
         });
 
         if let Some(p) = pressed {
-            let label = Op::ALL.into_iter().find(|&op| op_labels[op as usize].contains(p));
+            let label = Op::ALL
+                .into_iter()
+                .find(|&op| op_labels[op as usize].contains(p));
             let param = Op::ALL.into_iter().find_map(|op| {
                 op_buttons[op as usize]
                     .iter()
@@ -465,7 +473,10 @@ impl App {
         let sk = self.scale_keys;
         // the row names: green once done, else red; a row's name blinks while its fields are
         // chosen
-        let picking = self.op_picking.filter(|&(s, _)| s == k).map(|(_, op)| op.row());
+        let picking = self
+            .op_picking
+            .filter(|&(s, _)| s == k)
+            .map(|(_, op)| op.row());
         if picking.is_some() {
             ctx.request_repaint_after(std::time::Duration::from_millis(50));
         }
@@ -573,7 +584,10 @@ fn paint_table(ui: &Ui, r: Rect, scale: f32, names: [Option<Color32>; 4]) {
     // row 1: the line between the scale and the key note
     let x = x + SCALE_W * scale;
     p.line_segment(
-        [Pos2::new(x, r.min.y + inset), Pos2::new(x, r.min.y + ch - inset)],
+        [
+            Pos2::new(x, r.min.y + inset),
+            Pos2::new(x, r.min.y + ch - inset),
+        ],
         stroke,
     );
     // the lines between the rows
@@ -701,7 +715,13 @@ fn paint_op_buttons(ui: &Ui, op: Op, buttons: &[(Rect, bool, Color32); 5], scale
             let f = FontId::proportional(CELL_H * 0.6 * scale);
             for dx in [0.0, 0.35 * scale] {
                 let at = r.center() + Vec2::new(dx, 0.0);
-                p.text(at, Align2::CENTER_CENTER, random::MOVES[param], f.clone(), ink);
+                p.text(
+                    at,
+                    Align2::CENTER_CENTER,
+                    random::MOVES[param],
+                    f.clone(),
+                    ink,
+                );
             }
         } else {
             paint_symbol(ui, param, r.center(), CELL_H * 0.27 * scale, ink, scale);

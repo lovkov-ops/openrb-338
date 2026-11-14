@@ -20,9 +20,9 @@ use eframe::egui::{
 
 use crate::app::App;
 use crate::browser::{Browser, Mode};
-use crate::palette::{INK, INK_DIM, SLATE_DARK, SLATE_LINE};
 use crate::generate::Op;
 use crate::lfo;
+use crate::palette::{INK, INK_DIM, SLATE_DARK, SLATE_LINE};
 use crate::random::{MOVES, PARAMS};
 use crate::scale::{KEYS, SCALES, ScaleKeys};
 
@@ -92,7 +92,10 @@ pub fn encode(state: &GenState) -> Vec<u8> {
     for synth in 0..2 {
         let c = state.scale_keys.get(synth);
         let n = synth + 1;
-        lines.push(format!("baze{n}.scale={}", c.scale.map_or("", |s| SCALES[s].0)));
+        lines.push(format!(
+            "baze{n}.scale={}",
+            c.scale.map_or("", |s| SCALES[s].0)
+        ));
         lines.push(format!("baze{n}.key={}", c.key.map_or("", |k| KEYS[k])));
         for op in Op::ALL {
             let names = if op == Op::Move { MOVES } else { PARAMS };
@@ -399,7 +402,10 @@ mod tests {
         assert!(text.contains("baze2.cutoff.sync=1\nbaze2.cutoff.shape=sh\n"));
         assert!(text.contains("baze1.cutoff.amount=0\n"));
         assert!(text.contains("baze2.decay.lfo=64\nbaze2.decay.amount=0\n"));
-        assert_eq!(decode(&encode(&GenState::default())), Some(GenState::default()));
+        assert_eq!(
+            decode(&encode(&GenState::default())),
+            Some(GenState::default())
+        );
     }
 
     #[test]
@@ -410,8 +416,14 @@ mod tests {
                      baze1.move=-2,+2\nbaze2.scale=BLUES?\nbaze2.key=D\n\
                      baze2.scale=HARM MINOR\n";
         let st = decode(body).unwrap();
-        assert_eq!(st.scale_keys.get(0).mask(), Some(crate::scale::mask(s("IONIAN"), 0)));
-        assert_eq!(st.sel[Op::Move as usize][0], [true, false, false, false, false]);
+        assert_eq!(
+            st.scale_keys.get(0).mask(),
+            Some(crate::scale::mask(s("IONIAN"), 0))
+        );
+        assert_eq!(
+            st.sel[Op::Move as usize][0],
+            [true, false, false, false, false]
+        );
         assert_eq!(st.scale_keys.get(1), Default::default());
         assert_eq!(decode(b"something else"), None);
         assert_eq!(decode(&[0xff, 0xfe]), None);

@@ -2073,7 +2073,10 @@ fn the_about_window_opens_centered_and_closes() {
     let (text, who, _) = orb_ui::about::FORK_CREDIT;
     assert_eq!(text, "Xtended features injected by");
     assert_eq!(who, "lovkov-ops");
-    assert!(shapes.contains(text) && shapes.contains(who), "the fork's credit is drawn");
+    assert!(
+        shapes.contains(text) && shapes.contains(who),
+        "the fork's credit is drawn"
+    );
     for (label, url) in orb_ui::about::COLLECTIONS {
         assert!(shapes.contains(label), "{label} is drawn");
         assert!(shapes.contains(url), "{url} is drawn");

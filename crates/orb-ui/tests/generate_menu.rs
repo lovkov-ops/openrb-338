@@ -2,12 +2,12 @@
 //! events run through `App::show` on the panel at 1:1 (panel pixels are screen points).
 
 use eframe::egui::{self, Event, Key, Modifiers, PointerButton, Pos2, RawInput, Rect, Vec2};
-use orb_ui::app::App;
 use eframe::egui::{MouseWheelSource, MouseWheelUnit, TouchPhase};
+use orb_ui::app::App;
 use orb_ui::generate::{self, CELL_H, COL_W, Field, LIST_ROWS, Op, ROWS};
-use orb_ui::scale::{KEYS, SCALES};
 use orb_ui::layout::{self, PANEL_H, PANEL_W};
 use orb_ui::model::Panel;
+use orb_ui::scale::{KEYS, SCALES};
 
 struct Harness {
     ctx: egui::Context,
@@ -179,7 +179,11 @@ fn baze_1_chooses_a_scale_then_a_key_and_its_keys_glow() {
     h.click_field(0, Field::Scale);
     h.click_list_row(1);
     assert_eq!(h.app.generate_list(), None);
-    assert_eq!(h.app.generate_open(), Some(0), "choosing keeps the menu open");
+    assert_eq!(
+        h.app.generate_open(),
+        Some(0),
+        "choosing keeps the menu open"
+    );
     assert_eq!(h.app.scale_keys().get(0).scale, Some(scale("IONIAN")));
     assert!(!generate::glows(h.app.scale_keys(), "tb303_1.key0"));
     // SCALE/KEY turns green only with the key note too
@@ -213,7 +217,11 @@ fn baze_2_waits_for_baze_1_and_lists_only_what_fits() {
     let mut h = Harness::new();
     h.click_at(button(1));
     h.click_field(1, Field::Scale);
-    assert_eq!(h.app.generate_list(), None, "nothing to offer before BAZE 1");
+    assert_eq!(
+        h.app.generate_list(),
+        None,
+        "nothing to offer before BAZE 1"
+    );
     // BAZE 1: C major (IONIAN, the list's second item)
     h.click_at(button(0));
     h.click_field(0, Field::Scale);
@@ -238,7 +246,10 @@ fn baze_2_waits_for_baze_1_and_lists_only_what_fits() {
     // a list's Escape closes the list only, the next closes the menu
     h.click_field(1, Field::Scale);
     h.key(Key::Escape);
-    assert_eq!((h.app.generate_list(), h.app.generate_open()), (None, Some(1)));
+    assert_eq!(
+        (h.app.generate_list(), h.app.generate_open()),
+        (None, Some(1))
+    );
     h.key(Key::Escape);
     assert_eq!(h.app.generate_open(), None);
 }
@@ -288,7 +299,10 @@ fn random_chooses_its_fields_while_blinking_then_randomizes_the_pattern() {
     // a second click turns a field off again
     h.click_at(p);
     h.click_at(p);
-    assert_eq!(h.app.op_selection(0, Op::Random), [false, false, true, true, false]);
+    assert_eq!(
+        h.app.op_selection(0, Op::Random),
+        [false, false, true, true, false]
+    );
     assert!(!h.app.row_done(0, 1));
     h.click_at(l);
     assert_eq!(h.app.op_picking(), None);
@@ -297,22 +311,35 @@ fn random_chooses_its_fields_while_blinking_then_randomizes_the_pattern() {
     assert_ne!(after, before);
     // only the chosen fields changed (a cleared pattern: rests on low C)
     for (a, b) in after.iter().zip(before.iter()) {
-        assert_eq!((a.note, a.rest, a.up, a.down), (b.note, b.rest, b.up, b.down));
+        assert_eq!(
+            (a.note, a.rest, a.up, a.down),
+            (b.note, b.rest, b.up, b.down)
+        );
     }
     // the engine is told every change
     assert!(h.app.panel.events.iter().any(|e| matches!(
         e,
-        orb_ui::model::Event::Step303 { synth: 0, field: 2, .. }
+        orb_ui::model::Event::Step303 {
+            synth: 0,
+            field: 2,
+            ..
+        }
     )));
     // the choice is kept for the next time; Escape stops choosing without a run
     h.click_at(l);
-    assert_eq!(h.app.op_selection(0, Op::Random), [false, false, true, true, false]);
+    assert_eq!(
+        h.app.op_selection(0, Op::Random),
+        [false, false, true, true, false]
+    );
     let kept = h.app.panel.pattern_303(0);
     h.key(Key::Escape);
     assert_eq!((h.app.op_picking(), h.app.generate_open()), (None, None));
     assert_eq!(h.app.panel.pattern_303(0), kept);
     // BAZE 2's pattern was left alone
-    assert_eq!(h.app.panel.pattern_303(1), orb_ui::model::Panel::new().pattern_303(1));
+    assert_eq!(
+        h.app.panel.pattern_303(1),
+        orb_ui::model::Panel::new().pattern_303(1)
+    );
 }
 
 #[test]
@@ -334,7 +361,11 @@ fn random_notes_follow_the_scale_and_key() {
     let steps = h.app.panel.pattern_303(0);
     assert!(steps.iter().any(|s| !s.rest), "some steps became notes");
     for s in steps {
-        assert!(orb_ui::scale::key_in(mask, s.note as usize), "note {}", s.note);
+        assert!(
+            orb_ui::scale::key_in(mask, s.note as usize),
+            "note {}",
+            s.note
+        );
     }
 }
 
@@ -386,8 +417,14 @@ fn alter_keeps_its_own_choice_and_moves_what_random_made() {
         assert_eq!((m.slide, m.up, m.down), (n.slide, n.up, n.down));
     }
     // both rows keep their choice
-    assert_eq!(h.app.op_selection(0, Op::Alter), [false, false, true, false, true]);
-    assert_eq!(h.app.op_selection(0, Op::Random), [false, false, true, false, true]);
+    assert_eq!(
+        h.app.op_selection(0, Op::Alter),
+        [false, false, true, false, true]
+    );
+    assert_eq!(
+        h.app.op_selection(0, Op::Random),
+        [false, false, true, false, true]
+    );
 }
 
 #[test]
@@ -416,7 +453,10 @@ fn move_takes_one_button_at_a_time_and_moves_the_whole_pattern_around() {
         let p = op_button(&h, 0, Op::Move, param);
         h.click_at(p);
     }
-    assert_eq!(h.app.op_selection(0, Op::Move), [false, true, false, false, false]);
+    assert_eq!(
+        h.app.op_selection(0, Op::Move),
+        [false, true, false, false, false]
+    );
     h.click_at(m);
     assert!(h.app.row_done(0, 3), "MOVE is green after a run");
     let moved = h.app.panel.pattern_303(0);

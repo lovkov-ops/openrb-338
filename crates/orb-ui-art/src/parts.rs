@@ -397,7 +397,15 @@ fn lfo_modes(out: &mut Vec<Part>) {
                     s.rect(1.5, 1.5, cell - 3.0, h - 3.0, 2.0, WAVE_GLOW);
                 }
                 let s_color = if sync { pal::GREEN } else { LFO_SYNC_OFF };
-                text(s, cell / 2.0, yc - 0.6, LFO_SYNC_CAP, Anchor::Middle, s_color, "Sync");
+                text(
+                    s,
+                    cell / 2.0,
+                    yc - 0.6,
+                    LFO_SYNC_CAP,
+                    Anchor::Middle,
+                    s_color,
+                    "Sync",
+                );
                 // the sine and sample & hold: the chosen one green with a glow
                 for (d, on) in [(&sine, !hold), (&sh, hold)] {
                     if on {
@@ -423,8 +431,16 @@ fn switches(out: &mut Vec<Part>) {
             s.rect(0.6, 0.6, w - 1.2, 12.8, 2.5, "#26282b");
             s.line(half, 3.0, half, 11.0, "#0e0f10", 1.0);
             let (sx, qx) = (half / 2.0 - 3.75, half + half / 2.0 - 3.75);
-            let on = if pos == 0 { (pal::GREEN, WAVE_OFF) } else { (WAVE_OFF, pal::GREEN) };
-            let glow = if pos == 0 { (WAVE_GLOW, "none") } else { ("none", WAVE_GLOW) };
+            let on = if pos == 0 {
+                (pal::GREEN, WAVE_OFF)
+            } else {
+                (WAVE_OFF, pal::GREEN)
+            };
+            let glow = if pos == 0 {
+                (WAVE_GLOW, "none")
+            } else {
+                ("none", WAVE_GLOW)
+            };
             wave_glyphs(s, sx, qx, 7.0, glow, 2.8);
             wave_glyphs(s, sx, qx, 7.0, on, 1.3);
         }));
@@ -1164,7 +1180,10 @@ const LFO_LABEL_CAP_303: f32 = 2.4;
 
 /// The centers of large knob `k`'s RATE and AMOUNT knobs (0 CUTOFF to 4 ACCENT).
 pub fn lfo_knobs_303(k: usize) -> ((f32, f32), (f32, f32)) {
-    let (cx, cy) = (knob_x_303(k) + KNOB_W_303 / 2.0, KNOB_Y_303 + KNOB_W_303 / 2.0);
+    let (cx, cy) = (
+        knob_x_303(k) + KNOB_W_303 / 2.0,
+        KNOB_Y_303 + KNOB_W_303 / 2.0,
+    );
     (
         (cx - LFO_DX_303, cy - LFO_DY_303),
         (cx + LFO_DX_303, cy + LFO_DY_303),
@@ -1200,7 +1219,14 @@ fn tb303_bg(out: &mut Vec<Part>) {
         let ink = pal::BLACK;
         // The waveform switch (over the pitch/clear block) is labeled in the middle of the
         // paper above it.
-        label(s, WAVE_X_303 + WAVE_W_303 / 2.0, WAVEFORM_Y_303, 3.6, ink, "WAVEFORM");
+        label(
+            s,
+            WAVE_X_303 + WAVE_W_303 / 2.0,
+            WAVEFORM_Y_303,
+            3.6,
+            ink,
+            "WAVEFORM",
+        );
         // TUNE: the small knob under the waveform, labeled above it
         label(s, LEFT_X_303, TUNE_LABEL_Y_303, 3.6, ink, "TUNE");
         for (k, name) in ["CUTOFF", "RESO", "ENV MOD", "DECAY", "ACCENT"]

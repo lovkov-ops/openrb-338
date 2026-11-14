@@ -143,10 +143,7 @@ pub fn paint_logo(ui: &mut Ui, rect: Rect, t: Option<f32>) {
             p.circle_filled(c, r * k, Color32::WHITE.gamma_multiply(a * f.flash));
         }
         let grow = 1.0 + 0.18 * f.flash;
-        let big = Rect::from_min_size(
-            c + (rect.min - c) * grow,
-            rect.size() * grow,
-        );
+        let big = Rect::from_min_size(c + (rect.min - c) * grow, rect.size() * grow);
         paint_piece(ui, "logo_x", big, 0.5 * f.flash);
     }
     paint_piece(ui, "logo_x", rect, f.x);
@@ -292,7 +289,10 @@ mod tests {
     #[test]
     fn the_final_state() {
         let end = Frame::at(END_S);
-        assert_eq!((end.openrb, end.n338, end.x, end.flash), (1.0, 1.0, 1.0, 0.0));
+        assert_eq!(
+            (end.openrb, end.n338, end.x, end.flash),
+            (1.0, 1.0, 1.0, 0.0)
+        );
         assert_eq!(end.seg, [1.0; 4]);
         assert_eq!((end.sub, end.icon), (1.0, 1.0));
         assert_eq!(Frame::at(10.0), end);

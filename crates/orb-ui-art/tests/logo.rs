@@ -67,9 +67,10 @@ fn wordmark_as_one_run() -> String {
     let x2 = x1 + text_width(cap, "338") + gap(cap);
     text(&mut s, x2, 17.0, cap, Anchor::Start, pal::WHITE, "x");
     // the underline: four segments in the 808's step colors
-    for ((x, w), color) in segments()
-        .into_iter()
-        .zip([pal::RED, pal::ORANGE, pal::YELLOW, pal::WHITE])
+    for ((x, w), color) in
+        segments()
+            .into_iter()
+            .zip([pal::RED, pal::ORANGE, pal::YELLOW, pal::WHITE])
     {
         s.rect(x, 28.0, w, 1.5, 0.75, color);
     }

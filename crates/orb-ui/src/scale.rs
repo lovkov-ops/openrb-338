@@ -198,21 +198,42 @@ mod tests {
 
     #[test]
     fn the_scales_have_their_notes() {
-        assert_eq!(notes(mask(s("IONIAN"), k("C"))), ["C", "D", "E", "F", "G", "A", "B"]);
-        assert_eq!(notes(mask(s("AEOLIAN"), k("A"))), ["C", "D", "E", "F", "G", "A", "B"]);
-        assert_eq!(notes(mask(s("MAJ PENTA"), k("G"))), ["D", "E", "G", "A", "B"]);
-        assert_eq!(notes(mask(s("MIN BLUES"), k("C"))), ["C", "D#", "F", "F#", "G", "A#"]);
+        assert_eq!(
+            notes(mask(s("IONIAN"), k("C"))),
+            ["C", "D", "E", "F", "G", "A", "B"]
+        );
+        assert_eq!(
+            notes(mask(s("AEOLIAN"), k("A"))),
+            ["C", "D", "E", "F", "G", "A", "B"]
+        );
+        assert_eq!(
+            notes(mask(s("MAJ PENTA"), k("G"))),
+            ["D", "E", "G", "A", "B"]
+        );
+        assert_eq!(
+            notes(mask(s("MIN BLUES"), k("C"))),
+            ["C", "D#", "F", "F#", "G", "A#"]
+        );
         assert_eq!(mask(s("CHROMATIC"), k("F#")), 0xfff);
         // KORG's other scales, on C
         let on_c = |name: &str| notes(mask(s(name), k("C")));
         assert_eq!(on_c("MAJ BLUES"), ["C", "D", "D#", "E", "G", "A"]);
-        assert_eq!(on_c("DIMINISH"), ["C", "D", "D#", "F", "F#", "G#", "A", "B"]);
-        assert_eq!(on_c("COM DIM"), ["C", "C#", "D#", "E", "F#", "G", "A", "A#"]);
+        assert_eq!(
+            on_c("DIMINISH"),
+            ["C", "D", "D#", "F", "F#", "G#", "A", "B"]
+        );
+        assert_eq!(
+            on_c("COM DIM"),
+            ["C", "C#", "D#", "E", "F#", "G", "A", "A#"]
+        );
         assert_eq!(on_c("RAGA 1"), ["C", "C#", "E", "F", "G", "G#", "B"]);
         assert_eq!(on_c("RAGA 2"), ["C", "C#", "E", "F#", "G", "A", "B"]);
         assert_eq!(on_c("RAGA 3"), ["C", "C#", "D#", "F#", "G", "G#", "B"]);
         assert_eq!(on_c("ARABIC"), ["C", "D#", "E", "F", "F#", "G#", "A#"]);
-        assert_eq!(on_c("SPANISH"), ["C", "C#", "D#", "E", "F", "G", "G#", "A#"]);
+        assert_eq!(
+            on_c("SPANISH"),
+            ["C", "C#", "D#", "E", "F", "G", "G#", "A#"]
+        );
         assert_eq!(on_c("GYPSY"), ["C", "D", "D#", "F#", "G", "G#", "B"]);
         assert_eq!(on_c("HAWAIIAN"), ["C", "D", "D#", "G", "A"]);
         assert_eq!(on_c("CHINESE"), ["C", "E", "F#", "G", "B"]);
@@ -261,7 +282,11 @@ mod tests {
         let mut sk = ScaleKeys::default();
         sk.set_scale(0, s("IONIAN"));
         sk.set_key(0, k("C"));
-        let names: Vec<&str> = sk.scale_options(1).into_iter().map(|i| SCALES[i].0).collect();
+        let names: Vec<&str> = sk
+            .scale_options(1)
+            .into_iter()
+            .map(|i| SCALES[i].0)
+            .collect();
         assert_eq!(
             names,
             [
@@ -307,7 +332,13 @@ mod tests {
         sk.set_key(1, k("A"));
         // C minor lacks A minor's E, A and B: BAZE 2 is cleared
         sk.set_scale(0, s("AEOLIAN"));
-        assert_eq!(sk.get(0), ScaleKey { scale: Some(s("AEOLIAN")), key: Some(k("C")) });
+        assert_eq!(
+            sk.get(0),
+            ScaleKey {
+                scale: Some(s("AEOLIAN")),
+                key: Some(k("C"))
+            }
+        );
         assert_eq!(sk.get(1), ScaleKey::default());
         // a chromatic BAZE 1 lets everything fit, and BAZE 2 stays when BAZE 1 goes back
         sk.set_scale(0, s("CHROMATIC"));

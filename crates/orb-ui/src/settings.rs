@@ -122,9 +122,7 @@ pub fn carry_over(file: &Path) -> bool {
     let Some(old) = dir.parent().map(|b| b.join("OpenRB-338").join(name)) else {
         return false;
     };
-    old.is_file()
-        && std::fs::create_dir_all(dir).is_ok()
-        && std::fs::copy(&old, file).is_ok()
+    old.is_file() && std::fs::create_dir_all(dir).is_ok() && std::fs::copy(&old, file).is_ok()
 }
 
 /// What the file holds, in the file's order.

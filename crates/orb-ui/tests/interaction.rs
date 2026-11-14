@@ -170,7 +170,11 @@ fn two_position_switch_flips_on_a_click_anywhere() {
     h.move_to(saw);
     h.down(Modifiers::NONE);
     h.up();
-    assert_eq!(h.app.panel.switch("tb303_1.wave"), 0, "the saw was chosen: it stays");
+    assert_eq!(
+        h.app.panel.switch("tb303_1.wave"),
+        0,
+        "the saw was chosen: it stays"
+    );
     h.move_to(square);
     h.down(Modifiers::NONE);
     assert_eq!(h.app.panel.switch("tb303_1.wave"), 1);
@@ -181,7 +185,11 @@ fn two_position_switch_flips_on_a_click_anywhere() {
     h.move_to(square);
     h.down(Modifiers::NONE);
     h.up();
-    assert_eq!(h.app.panel.switch("tb303_1.wave"), 1, "the square was chosen: it stays");
+    assert_eq!(
+        h.app.panel.switch("tb303_1.wave"),
+        1,
+        "the square was chosen: it stays"
+    );
     h.move_to(saw);
     h.down(Modifiers::NONE);
     h.up();

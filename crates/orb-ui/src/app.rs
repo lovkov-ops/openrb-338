@@ -22,7 +22,6 @@ use crate::behavior::{self, Mods};
 use crate::browser::{Browser, Mode, Poll};
 use crate::document::Document;
 use crate::generate;
-use crate::scale::ScaleKeys;
 use crate::keys::{self, Action, KeyMode};
 use crate::layout::{self, Ctl, PANEL_H, PANEL_W};
 use crate::link::Link;
@@ -30,6 +29,7 @@ use crate::logo_anim;
 use crate::menu::{Job, MENU_H, ModEntry, Then};
 use crate::model::Panel;
 use crate::palette::BG;
+use crate::scale::ScaleKeys;
 use crate::settings::Settings;
 use crate::shortcuts;
 

@@ -49,7 +49,10 @@ fn synth_of_section(sec: &str) -> Option<usize> {
 /// (`tb303_N.cutoff` .. `tb303_N.accent`).
 pub fn target_of(id: &str) -> Option<(usize, usize)> {
     let (sec, name) = id.split_once('.')?;
-    Some((synth_of_section(sec)?, PARAMS.iter().position(|p| *p == name)?))
+    Some((
+        synth_of_section(sec)?,
+        PARAMS.iter().position(|p| *p == name)?,
+    ))
 }
 
 /// The ids of a synth's knob `param` (an index into `PARAMS`), its LFO's RATE and AMOUNT knobs
