@@ -294,6 +294,21 @@ pub fn groups(is_mac: bool) -> Vec<Group> {
                 menu_row(is_mac, &shortcuts::SAVE, "File > Save"),
                 menu_row(
                     is_mac,
+                    &crate::pattern_clip::COPY,
+                    "Edit > Copy Pattern (the focused row's)",
+                ),
+                menu_row(
+                    is_mac,
+                    &crate::pattern_clip::CUT,
+                    "Edit > Cut Pattern (the focused row's)",
+                ),
+                menu_row(
+                    is_mac,
+                    &crate::pattern_clip::PASTE,
+                    "Edit > Paste Pattern (the focused row's)",
+                ),
+                menu_row(
+                    is_mac,
                     &shortcuts::KEYS_SYNTH,
                     "Options > Program Synth from Keyboard",
                 ),
@@ -754,10 +769,18 @@ mod tests {
                 .map(|r| r.keys.clone())
                 .collect()
         };
-        assert_eq!(text(true), ["Cmd+N", "Cmd+O", "Cmd+S", "Cmd+F", "Cmd+G"]);
+        // (this fork: Cmd/Ctrl+C, X, V copy, cut and paste a pattern)
+        assert_eq!(
+            text(true),
+            [
+                "Cmd+N", "Cmd+O", "Cmd+S", "Cmd+C", "Cmd+X", "Cmd+V", "Cmd+F", "Cmd+G"
+            ]
+        );
         assert_eq!(
             text(false),
-            ["Ctrl+N", "Ctrl+O", "Ctrl+S", "Ctrl+F", "Ctrl+G"]
+            [
+                "Ctrl+N", "Ctrl+O", "Ctrl+S", "Ctrl+C", "Ctrl+X", "Ctrl+V", "Ctrl+F", "Ctrl+G"
+            ]
         );
     }
 

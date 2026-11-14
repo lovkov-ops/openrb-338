@@ -451,7 +451,7 @@ impl Panel {
         self.events.push(e);
     }
 
-    fn set_event(&mut self, id: &str, value: i32) {
+    pub(crate) fn set_event(&mut self, id: &str, value: i32) {
         self.emit(Event::Set {
             id: id.into(),
             value,
@@ -909,7 +909,7 @@ impl Panel {
         self.put_step808(self.inst808, step, on);
     }
 
-    fn put_step808(&mut self, i: usize, step: usize, on: bool) {
+    pub(crate) fn put_step808(&mut self, i: usize, step: usize, on: bool) {
         if self.steps808[i][step] != on {
             self.steps808[i][step] = on;
             self.emit(Event::Step808 {
@@ -925,7 +925,7 @@ impl Panel {
         self.put_step909(self.inst909, step, value);
     }
 
-    fn put_step909(&mut self, i: usize, step: usize, value: u8) {
+    pub(crate) fn put_step909(&mut self, i: usize, step: usize, value: u8) {
         if self.steps909[i][step] == value {
             return;
         }

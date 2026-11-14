@@ -196,6 +196,10 @@ pub struct App {
     pub(crate) lfo_run: [[crate::lfo::Runner; 5]; 2],
     pub(crate) lfo_time: Option<f64>,
     pub(crate) rng: crate::random::Rng,
+    /// The pattern Copy or Cut took last (`pattern_clip.rs`).
+    pub(crate) pattern_clip: Option<crate::pattern_clip::PatternClip>,
+    /// Its text, for the system clipboard at the end of the frame.
+    pub(crate) clip_text: Option<String>,
     /// Whether the logo plays its startup animation (task-114): the panel once, from the first
     /// frame it is drawn, and the About window at each open. Off by default, so the headless
     /// tests and `--screenshot` see the final state; `enable_logo_anim` turns it on.
@@ -272,6 +276,8 @@ impl App {
             }),
             lfo_time: None,
             rng: crate::random::Rng::from_time(),
+            pattern_clip: None,
+            clip_text: None,
             logo_anim: false,
             logo_start: None,
             about_start: None,
@@ -667,6 +673,8 @@ impl App {
                     self.holds.clear();
                 } else {
                     self.keyboard(ui);
+                    // Cmd/Ctrl+C, X, V: the focused row's pattern (pattern_clip.rs)
+                    self.pattern_clipboard_keys(ui);
                 }
                 self.focus_click(ui, &view);
             }
@@ -743,6 +751,9 @@ impl App {
         self.key_help_ui(&ctx);
         self.mod_info_ui(&ctx);
         self.poll_export(&ctx);
+        if let Some(t) = self.clip_text.take() {
+            ctx.copy_text(t);
+        }
         self.update_title(&ctx);
         self.close_if_allowed(&ctx);
     }
@@ -900,7 +911,11 @@ impl App {
                 match kind {
                     "repeat" | "wind" => self.repeat(ui, c, &r),
                     "switch" | "toggle" | "radio" | "trigger" | "grid" => {
-                        if self.first_press(ui, c, &r) {
+                        // a right click on a pattern button opens the pattern menu instead
+                        // (this fork, pattern_clip.rs): it does not select the pattern
+                        let menu_click = pattern_button(&c.id).is_some()
+                            && ui.input(|i| i.pointer.button_down(egui::PointerButton::Secondary));
+                        if self.first_press(ui, c, &r) && !menu_click {
                             if let Some(k) = generate::synth_of(&c.id) {
                                 self.toggle_generate(k);
                             }
@@ -918,6 +933,12 @@ impl App {
                         self.panel.set_switch(&c.id, v);
                     }
                     _ => {}
+                }
+                // the lit pattern button's menu: Copy, Cut, Paste (pattern_clip.rs)
+                if let Some((row, button)) = pattern_button(&c.id)
+                    && self.panel.rows[row].lit_button() == Some(button)
+                {
+                    self.pattern_menu(&r, row);
                 }
                 // the 303's keys of the chosen scale glow under the key (generate.rs)
                 if generate::glows(&self.scale_keys, &c.id) {
@@ -1245,6 +1266,14 @@ impl App {
             }));
         }
     }
+}
+
+/// The row (0..=3) and the button (0..=7) of a pattern button's id (`pattern2.pattern5`).
+fn pattern_button(id: &str) -> Option<(usize, u8)> {
+    let (sec, name) = id.split_once('.')?;
+    let row: usize = sec.strip_prefix("pattern")?.parse().ok()?;
+    let b: u8 = name.strip_prefix("pattern")?.parse().ok()?;
+    ((1..=4).contains(&row) && (1..=8).contains(&b)).then(|| (row - 1, b - 1))
 }
 
 fn part_size(name: &str) -> (f32, f32) {

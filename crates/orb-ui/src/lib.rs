@@ -25,6 +25,7 @@ pub mod menu;
 pub mod mod_info;
 pub mod model;
 pub mod palette;
+pub mod pattern_clip;
 pub mod random;
 pub mod rbsx;
 pub mod scale;

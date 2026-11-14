@@ -96,6 +96,8 @@ pub enum Cmd {
     /// "Play Mod Startup Sound" of the Options menu (the original's Edit > Preferences).
     ToggleStartupSound,
     SetKeyMode(KeyMode),
+    /// The Edit menu (this fork): Copy, Cut or Paste of the focused row's pattern.
+    Pattern(crate::pattern_clip::ClipCmd),
 }
 
 /// One entry of the Mods menu: a mod of the Mods folder, or the several mods that share an
@@ -930,6 +932,7 @@ impl App {
             }
             Cmd::Info => self.show_info(),
             Cmd::KeyHelp => self.show_key_help(),
+            Cmd::Pattern(c) => self.run_clip_cmd(self.panel.focus, c),
             Cmd::About => self.show_about(),
             Cmd::ChooseModFile => self.open_browser(Mode::ChooseMod),
             Cmd::UseKit(kit) => self.use_kit(kit),
@@ -1157,6 +1160,12 @@ impl App {
                             if r.clicked() {
                                 cmd = Some(Cmd::Export);
                                 ui.close();
+                            }
+                        });
+                        ui.menu_button("Edit", |ui| {
+                            let paste = self.can_paste_pattern();
+                            if let Some(c) = crate::pattern_clip::pattern_menu_items(ui, paste) {
+                                cmd = Some(Cmd::Pattern(c));
                             }
                         });
                         ui.menu_button("Mods", |ui| {
