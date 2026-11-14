@@ -216,23 +216,25 @@ fn the_lfo_moves_the_engines_cutoff_while_the_knob_keeps_the_users_value() {
 }
 
 #[test]
-fn the_mode_buttons_take_a_click_on_each_third() {
+fn the_mode_buttons_take_a_click_on_each_half() {
+    // (this fork) two cells: the note (tempo sync) and the wave, one button that flips the
+    // sine and the random sine
     let mut h = Harness::new();
     let id = &lfo::ids(1, 0)[3];
     let c = layout::controls()
         .into_iter()
         .find(|c| &c.id == id)
         .unwrap();
-    let at = |third: f32| Pos2::new(c.x + c.w * (third + 0.5) / 3.0, c.y + c.h / 2.0);
+    let at = |half: f32| Pos2::new(c.x + c.w * (half + 0.5) / 2.0, c.y + c.h / 2.0);
     assert_eq!(h.app.lfo_mode(1, 0), lfo::Mode::default());
-    // S: tempo sync on, then off again
+    assert_eq!(h.app.lfo_mode(1, 0).shape, Shape::Sine);
+    // the note: tempo sync on, then off again
     h.click_at(at(0.0));
     assert!(h.app.lfo_mode(1, 0).sync);
-    // sample & hold, then the sine: one of the two at a time
-    h.click_at(at(2.0));
+    // the wave: the random sine, then the sine again
+    h.click_at(at(1.0));
     assert_eq!(h.app.lfo_mode(1, 0).shape, Shape::SampleHold);
-    h.click_at(at(2.0));
-    assert_eq!(h.app.lfo_mode(1, 0).shape, Shape::SampleHold);
+    assert!(h.app.lfo_mode(1, 0).sync, "the wave leaves the note alone");
     h.click_at(at(1.0));
     assert_eq!(h.app.lfo_mode(1, 0).shape, Shape::Sine);
     h.click_at(at(0.0));

@@ -3,10 +3,11 @@
 //! knob is set to, while the knob stays where the user put it.
 //!
 //! Two small knobs drive it: RATE and AMOUNT, how far the value moves (0: no movement, full:
-//! the whole range above and below the knob's value, clipped to 0..=127). Under the knob three
-//! buttons choose how: S ties the rate to the song's tempo (off: free, in hertz), and either the
-//! sine (a smooth up and down) or sample & hold (a new random height each cycle, glided to
-//! smoothly, as uneven sines).
+//! the whole range above and below the knob's value, clipped to 0..=127). They sit under the
+//! knob, left and right of two buttons that choose how: the note ties the rate to the song's
+//! tempo (off: free, in hertz), and the wave button flips between the sine (a smooth up and
+//! down) and the random sine, sample & hold (every half cycle a new random height on the other
+//! side, glided to smoothly: an uneven sine, as fast as the sine).
 //!
 //! Free, the rate knob goes from `FREE_MIN_HZ` to `FREE_MAX_HZ` on a log scale. Tied to the
 //! tempo it picks one cycle's length from `SYNC_BEATS`, and while the song plays the cycle is
@@ -87,7 +88,7 @@ pub fn knob_default(id: &str) -> Option<u8> {
 pub enum Shape {
     #[default]
     Sine,
-    /// Sample & hold: a new random height each cycle, glided to.
+    /// Sample & hold, the random sine: a new random height every half cycle, glided to.
     SampleHold,
 }
 
@@ -96,6 +97,13 @@ pub enum Shape {
 pub struct Mode {
     pub sync: bool,
     pub shape: Shape,
+}
+
+/// The random sine's peak of half cycle `half`: above the middle on the even halves, below on
+/// the odd ones, at a random height from half the range to all of it.
+fn peak(rng: &mut Rng, half: i64) -> f64 {
+    let h = 0.5 + 0.5 * rng.unit();
+    if half.rem_euclid(2) == 0 { h } else { -h }
 }
 
 /// The rate in cycles a second for the rate knob at `rate` (0..=1) when free.
@@ -123,9 +131,9 @@ pub fn modulate(base: u8, amount: f64, v: f64) -> u8 {
 pub struct Runner {
     /// Cycles run so far (the whole part counts the cycles, the fraction is the phase).
     pub cycles: f64,
-    /// The sample & hold: the height the cycle starts from and the one it glides to.
+    /// The sample & hold: the peak the half cycle starts from and the one it glides to.
     held: (f64, f64),
-    /// The cycle whose heights `held` are.
+    /// The half cycle whose peaks `held` are.
     held_cycle: i64,
     rng: Rng,
     /// The knob's value the LFO moves around while it runs (None: not running).
@@ -137,8 +145,8 @@ pub struct Runner {
 impl Runner {
     pub fn new(seed: u64) -> Self {
         let mut rng = Rng::new(seed);
-        let first = rng.unit() * 2.0 - 1.0;
-        let second = rng.unit() * 2.0 - 1.0;
+        let first = peak(&mut rng, -1);
+        let second = peak(&mut rng, 0);
         Self {
             cycles: 0.0,
             held: (first, second),
@@ -169,18 +177,21 @@ impl Runner {
         match shape {
             Shape::Sine => (std::f64::consts::TAU * phase).sin(),
             Shape::SampleHold => {
-                let cycle = self.cycles.floor() as i64;
-                if cycle != self.held_cycle {
-                    // one cycle on: glide on from where it was; a jump draws two new heights
-                    self.held = if cycle == self.held_cycle + 1 {
-                        (self.held.1, self.rng.unit() * 2.0 - 1.0)
+                // two glides a cycle, as the sine goes up and down once each: every half cycle
+                // a new peak on the other side, of a random height
+                let half = (self.cycles * 2.0).floor() as i64;
+                if half != self.held_cycle {
+                    // one half on: glide on from where it was; a jump draws two new peaks
+                    self.held = if half == self.held_cycle + 1 {
+                        (self.held.1, peak(&mut self.rng, half))
                     } else {
-                        (self.rng.unit() * 2.0 - 1.0, self.rng.unit() * 2.0 - 1.0)
+                        (peak(&mut self.rng, half - 1), peak(&mut self.rng, half))
                     };
-                    self.held_cycle = cycle;
+                    self.held_cycle = half;
                 }
                 let (a, b) = self.held;
-                let k = (1.0 - (std::f64::consts::PI * phase).cos()) / 2.0;
+                let t = (self.cycles * 2.0).fract();
+                let k = (1.0 - (std::f64::consts::PI * t).cos()) / 2.0;
                 a + (b - a) * k
             }
         }
@@ -193,15 +204,19 @@ impl App {
         self.lfo_mode[synth][param]
     }
 
-    /// A press on an LFO's mode button: `button` 0 turns tempo sync on or off, 1 chooses the
-    /// sine, 2 sample & hold.
+    /// A press on an LFO's mode button: `button` 0 (the note) turns tempo sync on or off, 1
+    /// (the wave) flips between the sine and the random sine (sample & hold).
     pub fn press_lfo_mode(&mut self, synth: usize, param: usize, button: usize) {
         let m = &mut self.lfo_mode[synth][param];
         let before = *m;
         match button {
             0 => m.sync = !m.sync,
-            1 => m.shape = Shape::Sine,
-            _ => m.shape = Shape::SampleHold,
+            _ => {
+                m.shape = match m.shape {
+                    Shape::Sine => Shape::SampleHold,
+                    Shape::SampleHold => Shape::Sine,
+                }
+            }
         }
         if *m != before {
             self.doc.modified = true;
@@ -264,8 +279,8 @@ impl App {
             && resp.contains_pointer()
             && let Some(at) = ui.input(|i| i.pointer.press_origin())
         {
-            let third = ((at.x - r.min.x) / r.width() * 3.0).floor().clamp(0.0, 2.0) as usize;
-            self.press_lfo_mode(k, p, third);
+            let half = ((at.x - r.min.x) / r.width() * 2.0).floor().clamp(0.0, 1.0) as usize;
+            self.press_lfo_mode(k, p, half);
         }
         let m = self.lfo_mode[k][p];
         let hold = m.shape == Shape::SampleHold;
@@ -378,7 +393,7 @@ mod tests {
     }
 
     #[test]
-    fn sample_and_hold_glides_to_a_new_random_height_each_cycle() {
+    fn sample_and_hold_glides_to_a_new_random_height_each_half_cycle() {
         let mut r = Runner::new(7);
         let mode = Mode {
             sync: false,
@@ -401,6 +416,42 @@ mod tests {
         let before = r.value(Shape::SampleHold);
         r.advance(0.000_002, 0.0, mode, 0, None);
         assert!((r.value(Shape::SampleHold) - before).abs() < 1e-3);
+    }
+
+    /// How far a wave travels (up and down added) and how often it turns, over 20 cycles at
+    /// 0.05 Hz in small steps.
+    fn travel(shape: Shape) -> (f64, usize) {
+        let mut r = Runner::new(7);
+        let mode = Mode { sync: false, shape };
+        let (mut dist, mut turns, mut last, mut dir) = (0.0, 0, r.value(shape), 0.0f64);
+        for _ in 0..20 * 400 {
+            r.advance(20.0 / 400.0, 0.0, mode, 0, None);
+            let v = r.value(shape);
+            let d = v - last;
+            if d.abs() > 1e-12 {
+                if dir != 0.0 && d.signum() != dir.signum() {
+                    turns += 1;
+                }
+                dir = d;
+            }
+            dist += d.abs();
+            last = v;
+        }
+        (dist, turns)
+    }
+
+    /// (this fork) The random sine moves about as fast as the sine: it turns twice a cycle and
+    /// travels most of the sine's way (it was one random glide a cycle, several times slower).
+    #[test]
+    fn the_random_sine_is_about_as_fast_as_the_sine() {
+        let (sine, sine_turns) = travel(Shape::Sine);
+        let (random, random_turns) = travel(Shape::SampleHold);
+        assert!((39..=41).contains(&sine_turns), "{sine_turns}");
+        assert!((39..=41).contains(&random_turns), "{random_turns}");
+        assert!(
+            random > 0.6 * sine && random < 1.1 * sine,
+            "{random} vs {sine}"
+        );
     }
 
     #[test]

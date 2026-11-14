@@ -8,9 +8,9 @@ use std::collections::HashMap;
 
 use crate::parts::{
     CLEAR_Y_303, FLAGS_303, KEY_ROWS_303, KNOB_SWEEP, KNOB_W_303, KNOB_Y_303, KNOBS, KNOBS_909,
-    LEFT_X_303, LFO_MODE_W, LOGO_X, LOGO_Y, MOD_VIEW_808, PITCH_LED_Y_303, PITCH_Y_303,
-    STEPS_Y_909, TUNE_Y_303, WAVE_X_303, WAVE_Y_303, WHITE_303, column_909, knob_x_303, knob_y_909,
-    lfo_knobs_303, rndm_303, step_led_303,
+    LEFT_X_303, LFO_MODE_W, LFO_MODE_Y_303, LOGO_X, LOGO_Y, MOD_VIEW_808, PITCH_LED_Y_303,
+    PITCH_Y_303, STEPS_Y_909, TUNE_Y_303, WAVE_X_303, WAVE_Y_303, WHITE_303, column_909,
+    knob_x_303, knob_y_909, lfo_knobs_303, rndm_303, step_led_303,
 };
 use crate::svg::{Part, Svg, arc_path, n, pal};
 
@@ -316,7 +316,7 @@ fn tb303(b: &mut Builder, r: usize) {
             "lfomode",
             "lfo_mode_00",
             knob_x_303(k) + KNOB_W_303 / 2.0 - LFO_MODE_W / 2.0,
-            KNOB_Y_303 + KNOB_W_303 + 2.0,
+            LFO_MODE_Y_303,
         );
     }
     // The step LEDs (this fork, instead of the edit step display and its arrows): a click
