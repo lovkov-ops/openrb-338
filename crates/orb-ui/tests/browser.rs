@@ -682,3 +682,42 @@ fn the_app_opens_the_browser_with_ctrl_o_and_the_panel_ignores_keys_meanwhile() 
     run(&mut app, k(Key::Space, Modifiers::NONE));
     assert!(!app.panel.events.is_empty());
 }
+
+#[test]
+fn save_as_format_buttons_choose_rbsx_or_rbs() {
+    // (this fork) Save As has two format buttons next to the name, .rbsx on at first: a click
+    // puts that extension on the name, and a name without one gets the button's.
+    let d = tree();
+    let (mut b, mut s) = browser(Mode::SaveSong, d.path());
+    let mut h = Harness::new();
+    h.frame(&mut b, &mut s, vec![]);
+    assert_eq!(b.song_extension(), "rbsx");
+    b.set_name("song");
+    assert_eq!(b.target().unwrap(), d.path().join("song.rbsx"));
+
+    let p = at(&mut h, &mut b, &mut s, "button:.rbs");
+    click(&mut h, &mut b, &mut s, p);
+    assert_eq!(b.song_extension(), "rbs");
+    assert_eq!(b.name(), "song.rbs");
+    assert_eq!(b.target().unwrap(), d.path().join("song.rbs"));
+
+    let p = at(&mut h, &mut b, &mut s, "button:.rbsx");
+    click(&mut h, &mut b, &mut s, p);
+    assert_eq!(b.name(), "song.rbsx");
+    // a name typed without an extension takes the button's, one typed with it keeps it
+    b.set_song_rbs(true);
+    b.set_name("other");
+    assert_eq!(b.target().unwrap(), d.path().join("other.rbs"));
+    b.set_name("other.rbsx");
+    assert_eq!(b.target().unwrap(), d.path().join("other.rbsx"));
+    // a dot in the name is not an extension to replace
+    b.set_name("v1.2");
+    b.set_song_rbs(false);
+    assert_eq!(b.name(), "v1.2.rbsx");
+
+    // a suggested .rbs name starts on .rbs, and so does Save As for an .rbs song
+    let b = Browser::new(Mode::SaveSong, &s).with_name("x.rbs");
+    assert_eq!(b.song_extension(), "rbs");
+    let b = Browser::new(Mode::SaveSong, &s).with_song_rbs(true);
+    assert_eq!(b.song_extension(), "rbs");
+}

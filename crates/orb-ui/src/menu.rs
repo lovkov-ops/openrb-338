@@ -34,7 +34,7 @@ use orb_engine::frame::LoadRefused;
 use orb_engine::samples::SampleSet;
 
 use crate::app::App;
-use crate::browser::{ExportFormat, Mode};
+use crate::browser::{Browser, ExportFormat, Mode};
 use crate::document::{self, Document};
 use crate::keys::KeyMode;
 use crate::palette::{INK, INK_DIM, SLATE_DARK, SLATE_LINE};
@@ -907,7 +907,17 @@ impl App {
             Cmd::New => self.new_song(),
             Cmd::Open => self.open_browser(Mode::OpenSong),
             Cmd::Save => self.save(),
-            Cmd::SaveAs => self.open_browser(Mode::SaveSong),
+            Cmd::SaveAs => {
+                // the format buttons start on .rbs for a song opened from an .rbs (this fork)
+                let rbs = self
+                    .doc
+                    .path
+                    .as_deref()
+                    .and_then(|p| p.extension())
+                    .is_some_and(|e| e.eq_ignore_ascii_case("rbs"));
+                self.browser =
+                    Some(Browser::new(Mode::SaveSong, &self.settings).with_song_rbs(rbs));
+            }
             Cmd::Export => {
                 if self.panel.transport.song_mode {
                     self.open_browser(Mode::Export);

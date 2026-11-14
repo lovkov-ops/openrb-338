@@ -166,6 +166,8 @@ pub struct Browser {
     path_text: String,
     name: String,
     format: ExportFormat,
+    /// Save As: the song format buttons (this fork): `.rbs` instead of the default `.rbsx`.
+    song_rbs: bool,
     show_all: bool,
     entries: Vec<Entry>,
     selected: Option<usize>,
@@ -207,6 +209,7 @@ impl Browser {
             path_text: String::new(),
             name: String::new(),
             format: ExportFormat::Wav,
+            song_rbs: false,
             show_all: false,
             entries: Vec::new(),
             selected: None,
@@ -237,12 +240,50 @@ impl Browser {
     /// its extension.
     pub fn with_name(mut self, name: &str) -> Self {
         self.name = name.to_string();
-        if let Some(f) =
-            ExportFormat::from_extension(Path::new(name).extension().and_then(|e| e.to_str()))
-        {
+        let ext = Path::new(name).extension().and_then(|e| e.to_str());
+        if let Some(f) = ExportFormat::from_extension(ext) {
             self.format = f;
         }
+        if self.mode == Mode::SaveSong && ext.is_some_and(|e| e.eq_ignore_ascii_case("rbs")) {
+            self.song_rbs = true;
+        }
         self
+    }
+
+    /// Save As starting on the `.rbs` button instead of `.rbsx` (a song opened from an `.rbs`).
+    pub fn with_song_rbs(mut self, rbs: bool) -> Self {
+        self.song_rbs = rbs;
+        self
+    }
+
+    /// The extension of the song format button that is on: `rbs` or `rbsx`.
+    pub fn song_extension(&self) -> &'static str {
+        if self.song_rbs {
+            "rbs"
+        } else {
+            crate::rbsx::EXTENSION
+        }
+    }
+
+    /// The song format buttons: chooses `.rbs` or `.rbsx` and puts that extension on the name.
+    pub fn set_song_rbs(&mut self, rbs: bool) {
+        self.song_rbs = rbs;
+        let name = self.name.trim();
+        if !name.is_empty() {
+            let p = Path::new(name);
+            let stem = match p.extension().and_then(|e| e.to_str()) {
+                Some(e)
+                    if e.eq_ignore_ascii_case("rbs")
+                        || e.eq_ignore_ascii_case(crate::rbsx::EXTENSION) =>
+                {
+                    p.file_stem()
+                        .map(|s| s.to_string_lossy().into_owned())
+                        .unwrap_or_default()
+                }
+                _ => name.to_string(),
+            };
+            self.name = format!("{stem}.{}", self.song_extension());
+        }
     }
 
     /// The rectangle a widget had in the last frame (`row:NAME`, `place:LABEL`,
@@ -487,15 +528,15 @@ impl Browser {
         }
         let ext = Path::new(name).extension().and_then(|e| e.to_str());
         let name = match self.mode {
-            // a name with .rbs stays an .rbs; any other is an .rbsx, which keeps the GENERATE
-            // menu too (rbsx.rs)
+            // a name with .rbs or .rbsx keeps it; any other gets the extension of the format
+            // button that is on (.rbsx by default, which keeps the GENERATE menu too, rbsx.rs)
             Mode::SaveSong => {
                 if ext.is_some_and(|e| {
                     e.eq_ignore_ascii_case("rbs") || e.eq_ignore_ascii_case(crate::rbsx::EXTENSION)
                 }) {
                     name.to_string()
                 } else {
-                    format!("{name}.{}", crate::rbsx::EXTENSION)
+                    format!("{name}.{}", self.song_extension())
                 }
             }
             _ => match (ext, ExportFormat::from_extension(ext)) {
@@ -721,10 +762,10 @@ impl Browser {
                 ui.horizontal(|ui| {
                     ui.label(RichText::new("Name").color(INK_DIM));
                     let w = ui.available_width()
-                        - if self.mode == Mode::Export {
-                            150.0
-                        } else {
-                            0.0
+                        - match self.mode {
+                            Mode::Export => 150.0,
+                            Mode::SaveSong => 110.0,
+                            _ => 0.0,
                         };
                     ui.add(
                         TextEdit::singleline(&mut self.name)
@@ -736,6 +777,23 @@ impl Browser {
                             let on = self.format == f;
                             if ui.selectable_label(on, f.extension()).clicked() && !on {
                                 self.set_format(f);
+                            }
+                        }
+                    }
+                    // the song format (this fork): .rbsx keeps the GENERATE and LFO settings,
+                    // .rbs is the original's format
+                    if self.mode == Mode::SaveSong {
+                        for (rbs, label) in [(false, ".rbsx"), (true, ".rbs")] {
+                            let on = self.song_rbs == rbs;
+                            let r = ui.selectable_label(on, label).on_hover_text(if rbs {
+                                "ReBirth song: the original's format, without the GENERATE \
+                                 and LFO settings"
+                            } else {
+                                "OpenRB-338x song: keeps the GENERATE and LFO settings too"
+                            });
+                            self.hits.push((format!("button:{label}"), r.rect));
+                            if r.clicked() && !on {
+                                self.set_song_rbs(rbs);
                             }
                         }
                     }
